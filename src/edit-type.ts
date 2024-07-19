@@ -1,4 +1,4 @@
-type Edits = {
+export type Edits = {
   explain: string; // explain what you want to do and why you're making this change.
   filename: string;
   type:
