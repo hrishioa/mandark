@@ -33,6 +33,12 @@ async function main() {
 
   const processedFiles = await processFiles(inputs);
 
+  if (printCodeAndExit) {
+    fs.writeFileSync("compiled-code.txt", processedFiles.code);
+    console.log("Code saved to compiled-code.txt");
+    process.exit(0);
+  }
+
   // I know this is can be wildly off, but only if large providers would actually
   // publish their tokenizers PROPERLY FFS
   const estimatedTokens = countTokens(
@@ -42,11 +48,6 @@ async function main() {
   const estimatedCosts =
     (estimatedTokens / 1000000) * selectedModel.inputCPM +
     selectedModel.outputCPM * (selectedModel.outputLength / 10000000);
-
-  if (printCodeAndExit) {
-    fs.writeFileSync("compiled-code.txt", processedFiles.code);
-    process.exit(0);
-  }
 
   console.log(
     `Loaded ${
