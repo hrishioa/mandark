@@ -3,18 +3,30 @@
 import { getAIEditsFromClaude } from "./call-ai-claude";
 import { getAIEditsFromGPT } from "./call-ai-gpt";
 import { processFiles } from "./process-files";
-import { input, select } from "@inquirer/prompts";
+import { input } from "@inquirer/prompts";
 import fs from "node:fs";
 import { EditProcessor } from "./edit-processor";
 import { countTokens } from "@anthropic-ai/tokenizer";
 import { taskPrompt } from "./prompt";
 import { models } from "./models";
 
+function listAvailableModels() {
+  console.log("Available models:");
+  models.forEach((model) => {
+    console.log(`- ${model.nickName}: ${model.name} (${model.provider})`);
+  });
+  console.log(
+    "\nYou can append the model nickname to the end of your command to use a specific model."
+  );
+}
+
 async function main() {
   console.log("Starting the program execution...");
   let inputs = process.argv.slice(2);
   const printCodeAndExit = inputs.includes("-p");
   inputs = inputs.filter((input) => !input.startsWith("-"));
+
+  listAvailableModels();
 
   const modelNickname = inputs.pop()!;
   let selectedModel = models.find((model) => model.nickName === modelNickname);
@@ -25,7 +37,7 @@ async function main() {
   }
 
   console.log(
-    `Selected model: ${selectedModel.name} from ${selectedModel.provider}`
+    `Selected model: ${selectedModel.nickName} (${selectedModel.name} from ${selectedModel.provider})`
   );
 
   if (inputs.length === 0) {
