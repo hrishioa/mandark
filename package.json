@@ -1,4 +1,8 @@
 {
+  "name": "devinjr",
+  "version": "0.2.4",
+  "author": "Hrishi Olickel <twitter-@hrishioa> (https://olickel.com)",
+  "description": "Super simple, easily modifiable AI Coding assistant",
   "type": "module",
   "dependencies": {
     "@anthropic-ai/sdk": "^0.24.3",
@@ -10,6 +14,13 @@
     "openai": "^4.52.7",
     "zod": "^3.23.8"
   },
+  "engines": {
+    "node": ">=18.17.0"
+  },
+  "bin": {
+    "devinjr": "dist/app.cjs"
+  },
+  "engineStrict": true,
   "devDependencies": {
     "@swc/core": "^1.7.0",
     "tsup": "^8.2.0",
