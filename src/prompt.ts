@@ -1,10 +1,4 @@
-import fs from "node:fs";
-import path from "node:path";
-
-const editTypespec = fs.readFileSync(
-  path.join(__dirname, "./edit-type.ts"),
-  "utf8"
-);
+import { EditTypeStr } from "./types";
 
 export const taskPrompt = (task: string) => `Task: ${task}
 
@@ -15,5 +9,5 @@ Facts:
 2. Leave toLine empty for additions.
 
 \`\`\`typescript
-${editTypespec}
+${EditTypeStr}
 \`\`\``;

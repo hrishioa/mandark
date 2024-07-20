@@ -2,7 +2,7 @@ import fs from "fs";
 import path from "path";
 import { confirm } from "@inquirer/prompts";
 import chalk from "chalk";
-import { Edits } from "./edit-type";
+import type { Edits } from "./types";
 
 class FileManager {
   private files: Map<string, string[]> = new Map();

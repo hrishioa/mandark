@@ -1,3 +1,5 @@
+// Implements continue on long responses for claude, working perfectly, just thought we'd leave it out for simplicity for now
+
 import Anthropic from "@anthropic-ai/sdk";
 import { z } from "zod";
 import {

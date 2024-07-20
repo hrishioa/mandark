@@ -2,18 +2,17 @@ import OpenAI from "openai";
 import { z } from "zod";
 import { Readable, Transform } from "stream";
 import oboe from "oboe";
-import { taskPrompt } from "./prompt.ts";
+import { taskPrompt } from "./prompt";
 import { ChatCompletionMessageParam } from "openai/resources/index.mjs";
-import { Edits } from "./edit-type.ts";
-import { AIEditGenerator, EditSchema } from "./types.ts";
-
-const openai = new OpenAI();
+import { AIEditGenerator, EditSchema, Edits } from "./types";
 
 export async function* getAIEditsFromGPT(
   fileContent: string,
   task: string,
   model: string
 ): AIEditGenerator {
+  const openai = new OpenAI();
+
   let messages: ChatCompletionMessageParam[] = [
     {
       role: "system",

@@ -6,11 +6,8 @@ import {
 } from "@anthropic-ai/sdk/resources/index.mjs";
 import { Readable, Transform } from "stream";
 import oboe from "oboe";
-import { taskPrompt } from "./prompt.ts";
-import { Edits } from "./edit-type.ts";
-import { AIEditGenerator, EditSchema } from "./types.ts";
-
-const anthropic = new Anthropic();
+import { taskPrompt } from "./prompt";
+import { AIEditGenerator, EditSchema, Edits } from "./types";
 
 export async function* getAIEditsFromClaude(
   fileContent: string,
@@ -20,6 +17,8 @@ export async function* getAIEditsFromClaude(
     "claude-3-5-sonnet-20240620" | "claude-3-haiku-20240307"
   >
 ): AIEditGenerator {
+  const anthropic = new Anthropic();
+
   const jsonStart = "[";
 
   let messages: MessageParam[] = [
