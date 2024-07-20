@@ -24,6 +24,7 @@ async function main() {
   console.log("Starting the program execution...");
   let inputs = process.argv.slice(2);
   const printCodeAndExit = inputs.includes("-p");
+  const includeImports = inputs.includes("-a");
   inputs = inputs.filter((input) => !input.startsWith("-"));
 
   listAvailableModels();
@@ -45,7 +46,7 @@ async function main() {
     process.exit(1);
   }
 
-  const processedFiles = await processFiles(inputs);
+  const processedFiles = await processFiles(inputs, includeImports);
 
   if (printCodeAndExit) {
     fs.writeFileSync("compiled-code.txt", processedFiles.code);

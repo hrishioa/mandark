@@ -2,7 +2,10 @@ import fs from "node:fs";
 import path from "node:path";
 import fastGlob from "fast-glob";
 
-export async function processFiles(inputs: string[]): Promise<{
+export async function processFiles(
+  inputs: string[],
+  includeImports: boolean
+): Promise<{
   code: string;
   count: number;
 }> {
@@ -22,9 +25,9 @@ export async function processFiles(inputs: string[]): Promise<{
     }
   }
 
-  const processedContents = (await Promise.all(allFiles.map(processFile))).join(
-    ""
-  );
+  const processedContents = (
+    await Promise.all(allFiles.map((file) => processFile(file, includeImports)))
+  ).join("");
 
   return {
     code: processedContents,
@@ -32,14 +35,21 @@ export async function processFiles(inputs: string[]): Promise<{
   };
 }
 
-async function processFile(filePath: string): Promise<string> {
+async function processFile(
+  filePath: string,
+  includeImports: boolean
+): Promise<string> {
   const content = fs.readFileSync(filePath, "utf-8");
-  const processedContent = content
+  let processedContent = content
     .split("\n")
     .map((line, index) => `L${index + 1}: ${line}`)
-    .join("\n")
-    .replace(/L\d+:\s*import.*?;?\n/g, "")
-    .replace(/L\d+:\s*import.*?{[\s\S]*?}\n/g, "");
+    .join("\n");
+
+  if (!includeImports) {
+    processedContent = processedContent
+      .replace(/L\d+:\s*import.*?;?\n/g, "")
+      .replace(/L\d+:\s*import.*?{[\s\S]*?}\n/g, "");
+  }
 
   // Get relative path to file
   const relativePath = path.relative(process.cwd(), filePath);
