@@ -1,6 +1,6 @@
+import * as path from "path";
+import * as fs from "fs";
 import { execSync } from "child_process";
-import fs from "fs";
-import path from "path";
 import chalk from "chalk";
 import { confirm } from "@inquirer/prompts";
 import { Edits } from "./types";
@@ -48,6 +48,7 @@ class FileManager {
 
 export class EditProcessor {
   private fileManager: FileManager;
+  private confirmedEdits: Edits = [];
 
   constructor() {
     this.fileManager = new FileManager();
@@ -58,26 +59,37 @@ export class EditProcessor {
   ): Promise<void> {
     for await (const editPacket of editStream) {
       if (editPacket.type === "edit") {
-        await this.processEdit(editPacket.edit);
+        const confirmed = await this.confirmEdit(editPacket.edit);
+        if (confirmed) {
+          this.confirmedEdits.push(editPacket.edit);
+        }
       } else if (editPacket.type === "alledits") {
         console.log("All edits processed.");
-        this.fileManager.saveAllFiles();
+        break;
       } else if (editPacket.type === "error") {
-        // Ask the user if they still want to apply edits
-        const userResponse = await confirm({
-          message: `\nError getting further edits: ${editPacket.error}\nDo you want to apply already confirmed edits and end?`,
-          default: true,
-          transformer: (answer) => (answer ? "👍" : "👎"),
-        });
-
-        if (userResponse) {
-          this.fileManager.saveAllFiles();
-        }
+        console.error(`Error getting further edits: ${editPacket.error}`);
+        break;
       }
+    }
+
+    if (this.confirmedEdits.length > 0) {
+      const userResponse = await confirm({
+        message: "\nDo you want to apply all confirmed edits?",
+        default: true,
+        transformer: (answer) => (answer ? "👍" : "👎"),
+      });
+
+      if (userResponse) {
+        await this.applyConfirmedEdits();
+      } else {
+        console.log("All changes discarded.");
+      }
+    } else {
+      console.log("No edits were confirmed.");
     }
   }
 
-  private async processEdit(edit: Edits[number]): Promise<void> {
+  private async confirmEdit(edit: Edits[number]): Promise<boolean> {
     this.fileManager.loadFile(edit.filename);
     const fileContent = this.fileManager.getFileContent(edit.filename);
 
@@ -97,34 +109,73 @@ export class EditProcessor {
         break;
       default:
         console.error("Unknown edit type");
-        return;
+        return false;
     }
 
-    console.log(`\n\nChange: ${edit.explain}\n`);
+    console.log(`\n\nProposed Change: ${edit.explain}\n`);
     console.log(`Diff for ${edit.filename}:\n`);
     this.printColoredDiff(fileContent, newContent, startLine, endLine);
 
     const userResponse = await confirm({
-      message: "\nDo you want to apply this change?",
+      message: "\nDo you want to confirm this change?",
       default: true,
       transformer: (answer) => (answer ? "👍" : "👎"),
     });
 
-    if (userResponse) {
+    if (userResponse && edit.newPackages && edit.newPackages.length > 0) {
+      await this.confirmNewPackages(edit.newPackages);
+    }
+
+    return userResponse;
+  }
+
+  private async applyConfirmedEdits(): Promise<void> {
+    const sortedEdits = this.sortEdits(this.confirmedEdits);
+
+    for (const edit of sortedEdits) {
+      this.fileManager.loadFile(edit.filename);
+      const fileContent = this.fileManager.getFileContent(edit.filename);
+
+      let startLine: number, endLine: number;
+      let newContent: string[];
+
+      switch (edit.type.type) {
+        case "addition":
+          startLine = edit.type.atLine - 1;
+          endLine = startLine;
+          newContent = edit.code.split("\n");
+          break;
+        case "replacement":
+          startLine = edit.type.fromLineNumber - 1;
+          endLine = edit.type.toLineNumber;
+          newContent = edit.code.split("\n");
+          break;
+      }
+
       const updatedContent = [
         ...fileContent.slice(0, startLine),
         ...newContent,
         ...fileContent.slice(endLine),
       ];
       this.fileManager.updateFile(edit.filename, updatedContent);
-      console.log("Change applied in memory.");
+      console.log(`Applied change to ${edit.filename}`);
 
       if (edit.newPackages && edit.newPackages.length > 0) {
         await this.installNewPackages(edit.newPackages);
       }
-    } else {
-      console.log("Change discarded.");
     }
+
+    this.fileManager.saveAllFiles();
+  }
+
+  private sortEdits(edits: Edits): Edits {
+    return edits.sort((a, b) => {
+      const aLine =
+        a.type.type === "addition" ? a.type.atLine : a.type.fromLineNumber;
+      const bLine =
+        b.type.type === "addition" ? b.type.atLine : b.type.fromLineNumber;
+      return bLine - aLine; // Sort in descending order (bottom to top)
+    });
   }
 
   private printColoredDiff(
@@ -160,26 +211,30 @@ export class EditProcessor {
     }
   }
 
-  private async installNewPackages(packages: string[]): Promise<void> {
-    if (packages.length === 0) return;
-
+  private async confirmNewPackages(packages: string[]): Promise<void> {
     const userResponse = await confirm({
-      message: `Do you want to install the following new packages: ${packages.join(
+      message: `This change requires the following new packages: ${packages.join(
         ", "
-      )}? (Needs bun)`,
+      )}. Do you want to install them? (Needs bun)`,
       default: true,
       transformer: (answer) => (answer ? "👍" : "👎"),
     });
     if (userResponse) {
-      console.log("Installing new packages...");
-      try {
-        execSync(`bun install ${packages.join(" ")}`, { stdio: "inherit" });
-        console.log("Packages installed successfully.");
-      } catch (error) {
-        console.error("Failed to install packages:", error);
-      }
+      console.log("Packages will be installed when changes are applied.");
     } else {
-      console.log("Package installation skipped.");
+      console.log("Package installation will be skipped.");
+    }
+  }
+
+  private async installNewPackages(packages: string[]): Promise<void> {
+    if (packages.length === 0) return;
+
+    console.log("Installing new packages...");
+    try {
+      execSync(`bun install ${packages.join(" ")}`, { stdio: "inherit" });
+      console.log("Packages installed successfully.");
+    } catch (error) {
+      console.error("Failed to install packages:", error);
     }
   }
 }
