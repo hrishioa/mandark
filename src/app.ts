@@ -25,7 +25,7 @@ async function main() {
   let inputs = process.argv.slice(2);
   const printCodeAndExit = inputs.includes("-p");
   const includeImports = inputs.includes("-a");
-  inputs = inputs.filter((input) => !input.startsWith("-"));
+  inputs = inputs.filter((input) => !input.startsWith("-") && !!input);
 
   listAvailableModels();
 
@@ -33,7 +33,7 @@ async function main() {
   let selectedModel = models.find((model) => model.nickName === modelNickname);
 
   if (!selectedModel) {
-    inputs.push(modelNickname);
+    if (modelNickname) inputs.push(modelNickname);
     selectedModel = models[0];
   }
 
@@ -42,7 +42,7 @@ async function main() {
   );
 
   if (inputs.length === 0) {
-    console.error("No files to process");
+    console.error("No files or folders to process");
     process.exit(1);
   }
 
@@ -68,7 +68,7 @@ async function main() {
     `Loaded ${
       processedFiles.count
     } files (${estimatedTokens} tokens). Estimated max cost: $${estimatedCosts.toFixed(
-      2
+      4
     )}`
   );
 
@@ -99,6 +99,10 @@ async function main() {
 
   const editProcessor = new EditProcessor();
   await editProcessor.processEditStream(editPacketStream);
+
+  console.log(
+    "Leave a star if you like it! https://github.com/hrishioa/mandark"
+  );
 }
 
 main();
