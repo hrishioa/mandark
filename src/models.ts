@@ -30,4 +30,12 @@ export const models: {
     inputCPM: 0.15,
     outputLength: 16384,
   },
+  {
+    name: "gpt-4-turbo",
+    provider: "openai",
+    nickName: "4turbo",
+    outputCPM: 30,
+    inputCPM: 10,
+    outputLength: 4096,
+  },
 ];

@@ -5,7 +5,5 @@ export default defineConfig({
   publicDir: false,
   clean: true,
   minify: true,
-  splitting: false,
-  sourcemap: true,
-  format: ["cjs", "esm"], // 👈 Node
+  format: ["cjs"], // 👈 Node
 });

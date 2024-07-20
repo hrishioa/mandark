@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 import { getAIEditsFromClaude } from "./call-ai-claude";
 import { getAIEditsFromGPT } from "./call-ai-gpt";
 import { processFiles } from "./process-files";

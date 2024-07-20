@@ -1,8 +1,10 @@
 {
-  "name": "devinjr",
-  "version": "0.2.4",
+  "name": "mandark",
+  "version": "0.0.1",
   "author": "Hrishi Olickel <twitter-@hrishioa> (https://olickel.com)",
-  "description": "Super simple, easily modifiable AI Coding assistant",
+  "description": "Super simple, easily modifiable AI Coder",
+  "repository": "https://github.com/hrishioa/mandark",
+  "license": "Apache-2.0",
   "type": "module",
   "dependencies": {
     "@anthropic-ai/sdk": "^0.24.3",
@@ -14,15 +16,24 @@
     "openai": "^4.52.7",
     "zod": "^3.23.8"
   },
+  "scripts": {
+    "package": "tsup"
+  },
+  "files": [
+    "dist"
+  ],
   "engines": {
     "node": ">=18.17.0"
   },
+  "main": "./dist/app.cjs",
   "bin": {
-    "devinjr": "dist/app.cjs"
+    "mandark": "./dist/app.cjs"
   },
   "engineStrict": true,
   "devDependencies": {
     "@swc/core": "^1.7.0",
+    "@types/bun": "^1.1.6",
+    "@types/node": "^20.14.11",
     "tsup": "^8.2.0",
     "typescript": "^5.5.3"
   }

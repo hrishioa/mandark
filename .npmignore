@@ -1,12 +1,12 @@
+archive
+tests
+
 .DS_Store
 zig-cache
 packages/*/*.wasm
 *.o
 *.a
 profile.json
-dist
-
-compiled-code.txt
 
 .env
 node_modules
@@ -126,8 +126,6 @@ myscript.sh
 cold-jsc-start
 cold-jsc-start.d
 
-bun.lockb
-
 /testdir
 /test.ts
 /test.js
@@ -175,5 +173,3 @@ x64
 ########################### MY STUFF
 
 test
-
-tests/test-code.txt
