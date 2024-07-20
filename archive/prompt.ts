@@ -16,4 +16,6 @@ Facts:
 
 \`\`\`typescript
 ${editTypespec}
-\`\`\``;
+\`\`\`
+
+Respond only with valid JSON array elements following the Edits typespec. Do not include the opening and closing brackets of the array.`;

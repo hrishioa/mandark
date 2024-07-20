@@ -1,5 +1,6 @@
 import { applyEdit } from "./apply-edits";
-import { getAIEdits } from "./call-ai";
+import { getAIEditsFromClaude } from "./call-ai-claude";
+import { getAIEditsFromGPT } from "./call-ai-gpt";
 import { processFiles } from "./process-files";
 import { input } from "@inquirer/prompts";
 import fs from "node:fs";
@@ -30,12 +31,15 @@ async function main() {
     validate: (input: string) => input.trim() !== "" || "Task cannot be empty",
   });
 
-  const editPacketStream = await getAIEdits(
+  // const editPacketStream = await getAIEditsFromClaude(
+  //   processedFiles.code,
+  //   task,
+  //   "claude-3-5-sonnet-20240620"
+  // );
+  const editPacketStream = await getAIEditsFromGPT(
     processedFiles.code,
     task,
-    // "claude-3-5-sonnet-20240620",
-    "claude-3-haiku-20240307",
-    2
+    "gpt-4o-mini"
   );
 
   for await (const editPacket of editPacketStream) {
@@ -45,9 +49,10 @@ async function main() {
       console.log("DONE!");
 
       for (const edit of editPacket.edits) {
-        applyEdit(edit);
+        await applyEdit(edit);
       }
     }
+console.log('Processing of files completed.');
   }
 }
 
