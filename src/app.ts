@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import chalk from "chalk";
 import { getAIEditsFromClaude } from "./call-ai-claude";
 import { getAIEditsFromGPT } from "./call-ai-gpt";
 import { processFiles } from "./process-files";
@@ -18,6 +19,34 @@ function listAvailableModels() {
   console.log(
     "\nYou can append the model nickname to the end of your command to use a specific model."
   );
+}
+function checkAndPrintAPIKeyInstructions(
+  selectedModel: (typeof models)[number]
+) {
+  const provider = selectedModel.provider;
+  const envVar =
+    provider === "anthropic" ? "ANTHROPIC_API_KEY" : "OPENAI_API_KEY";
+
+  if (!process.env[envVar]) {
+    console.log(
+      chalk.yellow(`\nWARNING: ${envVar} is not set in your environment.`)
+    );
+    console.log(
+      chalk.yellow(
+        `To use ${
+          provider.charAt(0).toUpperCase() + provider.slice(1)
+        } models, please set your API key:`
+      )
+    );
+    console.log(chalk.cyan(`\nexport ${envVar}='your-api-key-here'`));
+    console.log(chalk.yellow("\nYou can get your API key from:"));
+    if (provider === "anthropic") {
+      console.log(chalk.cyan("https://console.anthropic.com/"));
+    } else {
+      console.log(chalk.cyan("https://platform.openai.com/account/api-keys"));
+    }
+    console.log();
+  }
 }
 
 async function main() {
@@ -40,6 +69,8 @@ async function main() {
   console.log(
     `Selected model: ${selectedModel.nickName} (${selectedModel.name} from ${selectedModel.provider})`
   );
+
+  checkAndPrintAPIKeyInstructions(selectedModel);
 
   if (inputs.length === 0) {
     console.error("No files or folders to process");
@@ -100,7 +131,7 @@ async function main() {
   const editProcessor = new EditProcessor();
   await editProcessor.processEditStream(editPacketStream);
 
-  console.log(
+  chalk.cyan(
     "Leave a star if you like it! https://github.com/hrishioa/mandark"
   );
 }
