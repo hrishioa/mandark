@@ -10,6 +10,7 @@ import { EditProcessor } from "./edit-processor";
 import { countTokens } from "@anthropic-ai/tokenizer";
 import { taskPrompt } from "./prompt";
 import { models } from "./models";
+import { password } from "@inquirer/prompts";
 
 function listAvailableModels() {
   console.log("Available models:");
@@ -20,33 +21,33 @@ function listAvailableModels() {
     "\nYou can append the model nickname to the end of your command to use a specific model."
   );
 }
-function checkAndPrintAPIKeyInstructions(
-  selectedModel: (typeof models)[number]
-) {
+
+async function checkAndSetAPIKey(selectedModel: (typeof models)[number]) {
   const provider = selectedModel.provider;
+  const apiKey = await getAPIKey(provider);
+
+  if (provider === "anthropic") {
+    process.env.ANTHROPIC_API_KEY = apiKey;
+  } else {
+    process.env.OPENAI_API_KEY = apiKey;
+  }
+
+  console.log(chalk.green(`API key for ${provider} has been set.`));
+}
+async function getAPIKey(provider: string): Promise<string> {
   const envVar =
     provider === "anthropic" ? "ANTHROPIC_API_KEY" : "OPENAI_API_KEY";
-
   if (!process.env[envVar]) {
-    console.log(
-      chalk.yellow(`\nWARNING: ${envVar} is not set in your environment.`)
-    );
-    console.log(
-      chalk.yellow(
-        `To use ${
-          provider.charAt(0).toUpperCase() + provider.slice(1)
-        } models, please set your API key:`
-      )
-    );
-    console.log(chalk.cyan(`\nexport ${envVar}='your-api-key-here'`));
-    console.log(chalk.yellow("\nYou can get your API key from:"));
-    if (provider === "anthropic") {
-      console.log(chalk.cyan("https://console.anthropic.com/"));
-    } else {
-      console.log(chalk.cyan("https://platform.openai.com/account/api-keys"));
-    }
-    console.log();
+    console.log(chalk.yellow(`\n${envVar} is not set in your environment.`));
+    const apiKey = await password({
+      message: `Please enter your ${
+        provider.charAt(0).toUpperCase() + provider.slice(1)
+      } API key:`,
+      mask: "*",
+    });
+    process.env[envVar] = apiKey;
   }
+  return process.env[envVar]!;
 }
 
 async function main() {
@@ -70,7 +71,7 @@ async function main() {
     `Selected model: ${selectedModel.nickName} (${selectedModel.name} from ${selectedModel.provider})`
   );
 
-  checkAndPrintAPIKeyInstructions(selectedModel);
+  await checkAndSetAPIKey(selectedModel);
 
   if (inputs.length === 0) {
     console.error("No files or folders to process");
@@ -136,4 +137,4 @@ async function main() {
   );
 }
 
-main();
+main().catch(console.error);
