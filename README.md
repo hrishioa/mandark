@@ -1,4 +1,6 @@
 <h1 align="center">
+      <br>
+  <a href="https://github.com/hrishioa/drick"><img src="https://github.com/user-attachments/assets/9f89b648-932b-405c-940f-b423d93d1a23" alt="mandark" width="200"></a>
   <br>
   <code>npx mandark &lt;folder or file&gt;</code>
   <br>
@@ -21,11 +23,11 @@
 Run mandark with:
 
 ```bash
-npx mandark folder1 file1 folder2 <-a> <-p> <modelname>
+npx mandark folder1 file1 folder2 <-a> <-p> <modelName>
 ```
 
 - `[folder1]`, `[file1]`, `[file2]`, etc.: Paths to individual files or folders you want to process
-- `[model]`: (Optional) Nickname of the AI model to use (e.g., 'sonnet35', 'haiku', '4omini', '4turbo')
+- `[modelName]`: (Optional) Nickname of the AI model to use (e.g., 'sonnet35', 'haiku', '4omini', '4turbo')
 - - `-p`: Print the line-tagged compiled code to a file and exit. Useful if you want to copy-paste into other assistants.
 - `-a`: Include import statements when processing files. This is skipped by default to save tokens.
 
