@@ -4,7 +4,7 @@ import { processFiles } from "./process-files";
 import { input, select } from "@inquirer/prompts";
 import fs from "node:fs";
 import { EditProcessor } from "./edit-processor";
-import GPT4Tokenizer from "gpt4-tokenizer";
+import { countTokens } from "@anthropic-ai/tokenizer";
 import { taskPrompt } from "./prompt";
 import { models } from "./models";
 
@@ -33,9 +33,9 @@ async function main() {
 
   const processedFiles = await processFiles(inputs);
 
-  const tokenizer = new GPT4Tokenizer({ type: "gpt4" });
-
-  const estimatedTokens = tokenizer.estimateTokenCount(
+  // I know this is can be wildly off, but only if large providers would actually
+  // publish their tokenizers PROPERLY FFS
+  const estimatedTokens = countTokens(
     processedFiles.code + taskPrompt("x".repeat(100))
   );
 
