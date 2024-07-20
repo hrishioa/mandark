@@ -35,6 +35,10 @@ class FileManager {
 
   saveAllFiles(): void {
     for (const [filePath, content] of this.files.entries()) {
+      const dir = path.dirname(filePath);
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+      }
       fs.writeFileSync(filePath, content.join("\n"));
     }
     console.log("All changes have been saved.");
@@ -60,8 +64,9 @@ export class EditProcessor {
       } else if (editPacket.type === "error") {
         // Ask the user if they still want to apply edits
         const userResponse = await confirm({
-          message: `\nError further edits: ${editPacket.error}\nDo you want to apply already confirmed edits?`,
+          message: `\nError getting further edits: ${editPacket.error}\nDo you want to apply already confirmed edits and end?`,
           default: true,
+          transformer: (answer) => (answer ? "👍" : "👎"),
         });
 
         if (userResponse) {
@@ -101,6 +106,7 @@ export class EditProcessor {
     const userResponse = await confirm({
       message: "\nDo you want to apply this change?",
       default: true,
+      transformer: (answer) => (answer ? "👍" : "👎"),
     });
 
     if (userResponse) {
