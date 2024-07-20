@@ -1,9 +1,18 @@
 import * as path from "path";
 import * as fs from "fs";
 import { execSync } from "child_process";
-import chalk from "chalk";
 import { confirm } from "@inquirer/prompts";
 import { Edits } from "./types";
+import chalk from "chalk";
+
+function createSeparator(text: string = ""): string {
+  const separatorLength = 50;
+  const paddedText = text ? ` ${text} ` : "";
+  const remainingLength = Math.max(separatorLength - paddedText.length, 0);
+  const leftPadding = "=".repeat(Math.floor(remainingLength / 2));
+  const rightPadding = "=".repeat(Math.ceil(remainingLength / 2));
+  return chalk.yellow(`${leftPadding}${paddedText}${rightPadding}`);
+}
 
 class FileManager {
   private files: Map<string, string[]> = new Map();
@@ -112,9 +121,11 @@ export class EditProcessor {
         return false;
     }
 
-    console.log(`\n\nProposed Change: ${edit.explain}\n`);
-    console.log(`Diff for ${edit.filename}:\n`);
+    console.log(createSeparator("Proposed Change"));
+    console.log(chalk.cyan(`\n${edit.explain}\n`));
+    console.log(createSeparator(`Diff for ${edit.filename}`));
     this.printColoredDiff(fileContent, newContent, startLine, endLine);
+    console.log(createSeparator());
 
     const userResponse = await confirm({
       message: "\nDo you want to confirm this change?",
@@ -132,6 +143,8 @@ export class EditProcessor {
   private async applyConfirmedEdits(): Promise<void> {
     const sortedEdits = this.sortEdits(this.confirmedEdits);
     const totalLinesChanged = this.calculateTotalLinesChanged(sortedEdits);
+
+    console.log(createSeparator("Applying Confirmed Edits"));
 
     for (const edit of sortedEdits) {
       this.fileManager.loadFile(edit.filename);
@@ -159,15 +172,18 @@ export class EditProcessor {
         ...fileContent.slice(endLine),
       ];
       this.fileManager.updateFile(edit.filename, updatedContent);
-      console.log(`Applied change to ${edit.filename}`);
+      console.log(chalk.green(`✓ Applied change to ${edit.filename}`));
 
       if (edit.newPackages && edit.newPackages.length > 0) {
         await this.installNewPackages(edit.newPackages);
       }
     }
 
-    console.log(`Total lines changed: ${totalLinesChanged}`);
+    console.log(createSeparator("Summary"));
+    console.log(chalk.cyan(`Total lines changed: ${totalLinesChanged}`));
     this.fileManager.saveAllFiles();
+    console.log(chalk.green("All changes have been saved."));
+    console.log(createSeparator());
   }
   private calculateTotalLinesChanged(edits: Edits): number {
     return edits.reduce((total, edit) => {
@@ -208,7 +224,7 @@ export class EditProcessor {
       if (i >= startLine && i < endLine) {
         console.log(chalk.red(`- ${oldLines[i]}`));
       } else if (i >= startLine - padding && i < startLine) {
-        console.log(`  ${oldLines[i]}`);
+        console.log(chalk.dim(`  ${oldLines[i]}`));
       }
     }
 
@@ -221,7 +237,7 @@ export class EditProcessor {
       i < Math.min(oldLines.length, endLine + padding);
       i++
     ) {
-      console.log(`  ${oldLines[i]}`);
+      console.log(chalk.dim(`  ${oldLines[i]}`));
     }
   }
 
