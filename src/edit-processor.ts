@@ -1,8 +1,9 @@
+import { execSync } from "child_process";
 import fs from "fs";
 import path from "path";
-import { confirm } from "@inquirer/prompts";
 import chalk from "chalk";
-import type { Edits } from "./types";
+import { confirm } from "@inquirer/prompts";
+import { Edits } from "./types";
 
 class FileManager {
   private files: Map<string, string[]> = new Map();
@@ -117,6 +118,10 @@ export class EditProcessor {
       ];
       this.fileManager.updateFile(edit.filename, updatedContent);
       console.log("Change applied in memory.");
+
+      if (edit.newPackages && edit.newPackages.length > 0) {
+        await this.installNewPackages(edit.newPackages);
+      }
     } else {
       console.log("Change discarded.");
     }
@@ -152,6 +157,29 @@ export class EditProcessor {
       i++
     ) {
       console.log(`  ${oldLines[i]}`);
+    }
+  }
+
+  private async installNewPackages(packages: string[]): Promise<void> {
+    if (packages.length === 0) return;
+
+    const userResponse = await confirm({
+      message: `Do you want to install the following new packages: ${packages.join(
+        ", "
+      )}? (Needs bun)`,
+      default: true,
+      transformer: (answer) => (answer ? "👍" : "👎"),
+    });
+    if (userResponse) {
+      console.log("Installing new packages...");
+      try {
+        execSync(`bun install ${packages.join(" ")}`, { stdio: "inherit" });
+        console.log("Packages installed successfully.");
+      } catch (error) {
+        console.error("Failed to install packages:", error);
+      }
+    } else {
+      console.log("Package installation skipped.");
     }
   }
 }
