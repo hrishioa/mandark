@@ -131,6 +131,7 @@ export class EditProcessor {
 
   private async applyConfirmedEdits(): Promise<void> {
     const sortedEdits = this.sortEdits(this.confirmedEdits);
+    const totalLinesChanged = this.calculateTotalLinesChanged(sortedEdits);
 
     for (const edit of sortedEdits) {
       this.fileManager.loadFile(edit.filename);
@@ -165,7 +166,20 @@ export class EditProcessor {
       }
     }
 
+    console.log(`Total lines changed: ${totalLinesChanged}`);
     this.fileManager.saveAllFiles();
+  }
+  private calculateTotalLinesChanged(edits: Edits): number {
+    return edits.reduce((total, edit) => {
+      if (edit.type.type === "addition") {
+        return total + edit.code.split("\n").length;
+      } else if (edit.type.type === "replacement") {
+        const oldLines = edit.type.toLineNumber - edit.type.fromLineNumber + 1;
+        const newLines = edit.code.split("\n").length;
+        return total + Math.abs(newLines - oldLines);
+      }
+      return total;
+    }, 0);
   }
 
   private sortEdits(edits: Edits): Edits {
