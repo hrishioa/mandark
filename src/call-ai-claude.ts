@@ -7,33 +7,10 @@ import {
 import { Readable, Transform } from "stream";
 import oboe from "oboe";
 import { taskPrompt } from "./prompt.ts";
+import { Edits } from "./edit-type.ts";
+import { AIEditGenerator, EditSchema } from "./types.ts";
 
 const anthropic = new Anthropic();
-
-const EditTypeSchema = z.discriminatedUnion("type", [
-  z.object({
-    type: z.literal("addition"),
-    atLine: z.number(),
-  }),
-  z.object({
-    type: z.literal("replacement"),
-    fromLineNumber: z.number(),
-    toLineNumber: z.number(),
-  }),
-  z.object({
-    type: z.literal("npm_install"),
-    packageName: z.string(),
-  }),
-]);
-
-const EditSchema = z.object({
-  explain: z.string(),
-  filename: z.string(),
-  type: EditTypeSchema,
-  code: z.string(),
-});
-
-type Edit = z.infer<typeof EditSchema>;
 
 export async function* getAIEditsFromClaude(
   fileContent: string,
@@ -42,16 +19,7 @@ export async function* getAIEditsFromClaude(
     MessageCreateParams["model"],
     "claude-3-5-sonnet-20240620" | "claude-3-haiku-20240307"
   >
-): AsyncGenerator<
-  | { type: "edit"; edit: Edit }
-  | { type: "error"; error: string }
-  | {
-      type: "alledits";
-      edits: Edit[];
-    },
-  void,
-  undefined
-> {
+): AIEditGenerator {
   const jsonStart = "[";
 
   let messages: MessageParam[] = [
@@ -105,8 +73,8 @@ export async function* getAIEditsFromClaude(
   tokenStream.pipe(jsonStream);
 
   let fullJSON = jsonStart;
-  let collectedEdits: Edit[] = [];
-  let latestEdits: Edit[] = [];
+  let collectedEdits: Edits = [];
+  let latestEdits: Edits = [];
 
   const parsePromise = new Promise<void>((resolve, reject) => {
     oboe(jsonStream)

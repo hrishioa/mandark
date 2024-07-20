@@ -10,10 +10,7 @@ export type Edits = {
         type: "replacement";
         fromLineNumber: number;
         toLineNumber: number;
-      }
-    | {
-        type: "npm_install"; // npm package to install
-        packageName: string;
       };
   code: string; // Code to insert or replace
+  newPackages?: string[]; // Does this code need new packages to be installed?
 }[];

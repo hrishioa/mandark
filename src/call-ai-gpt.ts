@@ -4,48 +4,16 @@ import { Readable, Transform } from "stream";
 import oboe from "oboe";
 import { taskPrompt } from "./prompt.ts";
 import { ChatCompletionMessageParam } from "openai/resources/index.mjs";
+import { Edits } from "./edit-type.ts";
+import { AIEditGenerator, EditSchema } from "./types.ts";
 
 const openai = new OpenAI();
-
-const EditTypeSchema = z.discriminatedUnion("type", [
-  z.object({
-    type: z.literal("addition"),
-    atLine: z.number(),
-  }),
-  z.object({
-    type: z.literal("replacement"),
-    fromLineNumber: z.number(),
-    toLineNumber: z.number(),
-  }),
-  z.object({
-    type: z.literal("npm_install"),
-    packageName: z.string(),
-  }),
-]);
-
-const EditSchema = z.object({
-  explain: z.string(),
-  filename: z.string(),
-  type: EditTypeSchema,
-  code: z.string(),
-});
-
-type Edit = z.infer<typeof EditSchema>;
 
 export async function* getAIEditsFromGPT(
   fileContent: string,
   task: string,
   model: string
-): AsyncGenerator<
-  | { type: "edit"; edit: Edit }
-  | { type: "error"; error: string }
-  | {
-      type: "alledits";
-      edits: Edit[];
-    },
-  void,
-  undefined
-> {
+): AIEditGenerator {
   let messages: ChatCompletionMessageParam[] = [
     {
       role: "system",
@@ -58,8 +26,6 @@ export async function* getAIEditsFromGPT(
         `\nRespond with a valid JSON object with the key 'edits' which contains an array of edit objects following the Edits typespec.`,
     },
   ];
-
-  console.log("Sending messages...");
 
   const tokens = model.includes("mini") ? 16384 : 4096;
 
@@ -86,8 +52,8 @@ export async function* getAIEditsFromGPT(
   tokenStream.pipe(jsonStream);
 
   let fullJSON = "";
-  let collectedEdits: Edit[] = [];
-  let latestEdits: Edit[] = [];
+  let collectedEdits: Edits = [];
+  let latestEdits: Edits = [];
 
   const parsePromise = new Promise<void>((resolve, reject) => {
     oboe(jsonStream)

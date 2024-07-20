@@ -1,9 +1,9 @@
-import { applyEdit } from "./apply-edits";
 import { getAIEditsFromClaude } from "./call-ai-claude";
 import { getAIEditsFromGPT } from "./call-ai-gpt";
 import { processFiles } from "./process-files";
 import { input } from "@inquirer/prompts";
 import fs from "node:fs";
+import { EditProcessor } from "./edit-processor";
 
 async function main() {
   console.log("Starting the program execution...");
@@ -42,18 +42,21 @@ async function main() {
     "gpt-4o-mini"
   );
 
-  for await (const editPacket of editPacketStream) {
-    if (editPacket.type === "edit") {
-      console.log("Edit found:", editPacket.edit);
-    } else if (editPacket.type === "alledits") {
-      console.log("DONE!");
+  const editProcessor = new EditProcessor();
+  await editProcessor.processEditStream(editPacketStream);
 
-      for (const edit of editPacket.edits) {
-        await applyEdit(edit);
-      }
-    }
-console.log('Processing of files completed.');
-  }
+  //   for await (const editPacket of editPacketStream) {
+  //     if (editPacket.type === "edit") {
+  //       console.log("Edit found:", editPacket.edit);
+  //     } else if (editPacket.type === "alledits") {
+  //       console.log("DONE!");
+
+  //       for (const edit of editPacket.edits) {
+  //         await applyEdit(edit);
+  //       }
+  //     }
+  // console.log('Processing of files completed.');
+  //   }
 }
 
 main();
