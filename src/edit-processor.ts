@@ -173,9 +173,11 @@ export class EditProcessor {
       ];
       this.fileManager.updateFile(edit.filename, updatedContent);
       console.log(chalk.green(`✓ Applied change to ${edit.filename}`));
-
       if (edit.newPackages && edit.newPackages.length > 0) {
-        await this.installNewPackages(edit.newPackages);
+        const shouldInstall = await this.confirmNewPackages(edit.newPackages);
+        if (shouldInstall) {
+          await this.installNewPackages(edit.newPackages);
+        }
       }
     }
 
@@ -241,7 +243,7 @@ export class EditProcessor {
     }
   }
 
-  private async confirmNewPackages(packages: string[]): Promise<void> {
+  private async confirmNewPackages(packages: string[]): Promise<boolean> {
     const userResponse = await confirm({
       message: `This change requires the following new packages: ${packages.join(
         ", "
@@ -254,6 +256,7 @@ export class EditProcessor {
     } else {
       console.log("Package installation will be skipped.");
     }
+    return userResponse;
   }
 
   private async installNewPackages(packages: string[]): Promise<void> {

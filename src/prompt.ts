@@ -7,6 +7,8 @@ Follow this typespec and return ONLY VALID JSON to suggest additions or replacem
 Facts:
 1. You can provide a new filename to create a file.
 2. Leave toLine empty for additions.
+3. Make sure the code snippet is fully code.
+4. Ensure the line numbers are accurate. Feel free to repeate existing code from previous or after lines to be sure.
 
 \`\`\`typescript
 ${EditTypeStr}
