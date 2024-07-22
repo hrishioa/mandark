@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { askAI } from "./askAI";
 
 import chalk from "chalk";
 import { getAIEditsFromClaude } from "./call-ai-claude";
@@ -51,7 +52,7 @@ async function getAPIKey(provider: string): Promise<string> {
 }
 
 async function main() {
-  console.log("Starting the program execution...");
+  console.log("Welcome to Mandark!");
   let inputs = process.argv.slice(2);
   const printCodeAndExit = inputs.includes("-p");
   const includeImports = inputs.includes("-a");
@@ -86,8 +87,6 @@ async function main() {
     process.exit(0);
   }
 
-  // I know this is can be wildly off, but only if large providers would actually
-  // publish their tokenizers PROPERLY FFS
   const estimatedTokens = countTokens(
     processedFiles.code + taskPrompt("x".repeat(100))
   );
@@ -105,35 +104,52 @@ async function main() {
   );
 
   const task = await input({
-    message: "What do you need me to do?",
+    message:
+      "What do you need me to do? (Type 'ask' followed by your question to ask a question instead): ",
     validate: (input: string) => input.trim() !== "" || "Task cannot be empty",
   });
 
-  let editPacketStream;
-  if (selectedModel.provider === "anthropic") {
-    editPacketStream = await getAIEditsFromClaude(
+  if (task.toLowerCase().startsWith("ask ")) {
+    const question = task.slice(4).trim();
+    const answerStream = askAI(
       processedFiles.code,
-      task,
-      selectedModel.name as
-        | "claude-3-5-sonnet-20240620"
-        | "claude-3-haiku-20240307"
+      question,
+      selectedModel.name,
+      selectedModel.provider
     );
-  } else if (selectedModel.provider === "openai") {
-    editPacketStream = await getAIEditsFromGPT(
-      processedFiles.code,
-      task,
-      selectedModel.name
-    );
+    for await (const chunk of answerStream) {
+      process.stdout.write(chunk);
+    }
+    console.log("\n");
   } else {
-    console.error(`Unsupported provider: ${selectedModel.provider}`);
-    process.exit(1);
+    let editPacketStream;
+    if (selectedModel.provider === "anthropic") {
+      editPacketStream = await getAIEditsFromClaude(
+        processedFiles.code,
+        task,
+        selectedModel.name as
+          | "claude-3-5-sonnet-20240620"
+          | "claude-3-haiku-20240307"
+      );
+    } else if (selectedModel.provider === "openai") {
+      editPacketStream = await getAIEditsFromGPT(
+        processedFiles.code,
+        task,
+        selectedModel.name
+      );
+    } else {
+      console.error(`Unsupported provider: ${selectedModel.provider}`);
+      process.exit(1);
+    }
+
+    const editProcessor = new EditProcessor();
+    await editProcessor.processEditStream(editPacketStream);
   }
 
-  const editProcessor = new EditProcessor();
-  await editProcessor.processEditStream(editPacketStream);
-
-  chalk.cyan(
-    "Leave a star if you like it! https://github.com/hrishioa/mandark"
+  console.log(
+    chalk.cyan(
+      "Leave a star if you like it! https://github.com/hrishioa/mandark"
+    )
   );
 }
 
