@@ -1,6 +1,6 @@
 <h1 align="center">
       <br>
-  <a href="https://github.com/hrishioa/drick"><img src="https://github.com/user-attachments/assets/9f89b648-932b-405c-940f-b423d93d1a23" alt="mandark" width="200"></a>
+  <a href="https://github.com/hrishioa/mandark"><img src="https://github.com/user-attachments/assets/9f89b648-932b-405c-940f-b423d93d1a23" alt="mandark" width="200"></a>
   <br>
   <code>npx mandark &lt;folder or file&gt;</code>
   <br>
