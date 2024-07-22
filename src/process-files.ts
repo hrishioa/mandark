@@ -16,6 +16,7 @@ export async function processFiles(
     if (stat.isDirectory()) {
       const files = await fastGlob(`${input}/**/*.{ts,tsx,js,py}`, {
         absolute: true,
+        ignore: ['**/node_modules/**']
       });
       allFiles.push(...files);
     } else if (stat.isFile()) {
