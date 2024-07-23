@@ -1,6 +1,6 @@
 export const models: {
   name: string;
-  provider: "anthropic" | "openai";
+  provider: "anthropic" | "openai" | "fireworks";
   nickName: string;
   outputCPM: number;
   inputCPM: number;
@@ -37,5 +37,13 @@ export const models: {
     outputCPM: 30,
     inputCPM: 10,
     outputLength: 4096,
+  },
+  {
+    name: "accounts/fireworks/models/llama-v3p1-405b-instruct",
+    provider: "fireworks",
+    nickName: "llama405b",
+    outputCPM: 3,
+    inputCPM: 3,
+    outputLength: 16384,
   },
 ];

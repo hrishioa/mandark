@@ -12,6 +12,7 @@ import { countTokens } from "@anthropic-ai/tokenizer";
 import { taskPrompt } from "./prompt";
 import { models } from "./models";
 import { password } from "@inquirer/prompts";
+import { getAIEditsFromFireworks } from "./call-fireworks";
 
 function listAvailableModels() {
   console.log("Available models:");
@@ -29,15 +30,22 @@ async function checkAndSetAPIKey(selectedModel: (typeof models)[number]) {
 
   if (provider === "anthropic") {
     process.env.ANTHROPIC_API_KEY = apiKey;
-  } else {
+  } else if (provider === "openai") {
     process.env.OPENAI_API_KEY = apiKey;
+  } else if (provider === "fireworks") {
+    process.env.FIREWORKS_API_KEY = apiKey;
   }
 
   console.log(chalk.green(`API key for ${provider} has been set.`));
 }
+
 async function getAPIKey(provider: string): Promise<string> {
   const envVar =
-    provider === "anthropic" ? "ANTHROPIC_API_KEY" : "OPENAI_API_KEY";
+    provider === "anthropic"
+      ? "ANTHROPIC_API_KEY"
+      : provider === "openai"
+      ? "OPENAI_API_KEY"
+      : "FIREWORKS_API_KEY";
   if (!process.env[envVar]) {
     console.log(chalk.yellow(`\n${envVar} is not set in your environment.`));
     const apiKey = await password({
@@ -133,6 +141,12 @@ async function main() {
       );
     } else if (selectedModel.provider === "openai") {
       editPacketStream = await getAIEditsFromGPT(
+        processedFiles.code,
+        task,
+        selectedModel.name
+      );
+    } else if (selectedModel.provider === "fireworks") {
+      editPacketStream = await getAIEditsFromFireworks(
         processedFiles.code,
         task,
         selectedModel.name

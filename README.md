@@ -11,7 +11,8 @@
 ## Features
 
 - Run without installation
-- Supports Claude-3.5 Sonnet, Haiku, GPT-4o-mini and GPT-4-turbo
+- Type `ask` followed by your question to ask a question about any codebase
+- Supports Claude-3.5 Sonnet, Haiku, GPT-4o-mini and GPT-4-turbo (now with llama405b from Fireworks)
 - Edit and create multiple files
 - Verify diffs from the command line
 - Install new packages as needed
