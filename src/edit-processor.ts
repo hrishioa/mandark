@@ -185,9 +185,11 @@ export class EditProcessor {
     console.log(createSeparator("Summary"));
     console.log(chalk.cyan(`Total lines changed: ${totalLinesChanged}`));
     this.fileManager.saveAllFiles();
+    this.fileManager.saveAllFiles();
     console.log(chalk.green("All changes have been saved."));
     saveEdits(this.confirmedEdits);
     console.log(chalk.green("Edit history has been updated."));
+    console.log(createSeparator());
     console.log(createSeparator());
   }
   private calculateTotalLinesChanged(edits: Edits): number {
