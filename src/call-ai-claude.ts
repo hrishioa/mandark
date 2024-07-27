@@ -8,6 +8,7 @@ import { Readable, Transform } from "stream";
 import oboe from "oboe";
 import { taskPrompt } from "./prompt";
 import { AIEditGenerator, EditSchema, Edits } from "./types";
+import ora, { Ora } from "ora";
 
 export async function* getAIEditsFromClaude(
   fileContent: string,
@@ -75,10 +76,18 @@ export async function* getAIEditsFromClaude(
   let collectedEdits: Edits = [];
   let latestEdits: Edits = [];
   let streamStatus: string = "notStarted";
+  let codeStreamingSpinner: null | Ora = null;
+  let codeTokens = 0;
+  const codeStreamingMessage = `Streaming code...`;
 
   const parsePromise = new Promise<void>((resolve, reject) => {
     oboe(jsonStream)
       .node("!.*", (edit) => {
+        if (codeStreamingSpinner) {
+          codeStreamingSpinner.stop();
+          codeStreamingSpinner = null;
+        }
+
         try {
           const validatedEdit = EditSchema.parse(edit);
           collectedEdits.push(validatedEdit);
@@ -94,6 +103,9 @@ export async function* getAIEditsFromClaude(
       })
       .path("!.*.explain", () => {
         streamStatus = "reasonEntered";
+      })
+      .path("!.*.code", () => {
+        codeStreamingSpinner = ora(codeStreamingMessage).start();
       })
       .done(() => {
         resolve();
@@ -120,6 +132,13 @@ export async function* getAIEditsFromClaude(
     ) {
       const text = chunk.delta.text;
 
+      if (codeStreamingSpinner) {
+        codeTokens++;
+        (
+          codeStreamingSpinner as Ora
+        ).text = `${codeStreamingMessage} (${codeTokens} tokens)`;
+      }
+
       if (streamStatus === "reasonEntered") {
         if (text.includes(`"`)) {
           process.stdout.write("\nChange: ");
@@ -131,7 +150,7 @@ export async function* getAIEditsFromClaude(
       } else if (streamStatus === "reasonStarted") {
         process.stdout.write(text.split(`"`)[0]);
         if (text.includes(`"`)) {
-          streamStatus = "reasonEnded";
+          streamStatus = "notStarted";
         }
       }
 

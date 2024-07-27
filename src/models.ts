@@ -26,7 +26,7 @@ export const models: {
     inputCPM: 0.25,
     outputLength: 4096,
     contextWindow: 200000,
-    // verifyModel: true,
+    verifyModel: true,
   },
   {
     name: "gpt-4o-mini",
@@ -57,3 +57,7 @@ export const models: {
     contextWindow: 262144,
   },
 ];
+
+export const preferredVerifierModel = models.find(
+  (model) => model.nickName === "4omini"
+)!;

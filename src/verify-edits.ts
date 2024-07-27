@@ -10,6 +10,7 @@ import {
 import OpenAI from "openai";
 import fs from "node:fs";
 import { loadNumberedFile } from "./process-files";
+import ora from "ora";
 
 // prettier-ignore
 const verifyPrompt = (edit: Edits[number]) =>
@@ -46,12 +47,9 @@ export async function verifyEdit(
 
   // console.log("Full code: \n", fullCode);
 
-  console.log(
-    "Verifying edit with ",
-    selectedModel.name
-    // ": ",
-    // JSON.stringify(edit.change, null, 2)
-  );
+  const verifySpinner = ora(
+    "Verifying edit with " + selectedModel.name
+  ).start();
 
   if (selectedModel.provider === "anthropic") {
     // prettier-ignore
@@ -96,7 +94,10 @@ export async function verifyEdit(
       fixedEditJSON = response.choices[0].message.content;
   }
 
-  if (!fixedEditJSON) return edit;
+  if (!fixedEditJSON) {
+    verifySpinner.stop();
+    return edit;
+  }
 
   try {
     const fixedEdit: CorrectedEditChange = JSON.parse(fixedEditJSON);
@@ -104,13 +105,14 @@ export async function verifyEdit(
       CorrectedEditChangeSchema.parse(fixedEdit);
 
     if (verifiedFix.type === "skip") {
-      console.log("Skipping edit");
+      // console.log("Skipping edit");
+      verifySpinner.stop();
       return null;
     }
     edit.change = verifiedFix;
 
     // console.log("Verified edit: ", JSON.stringify(verifiedFix, null, 2));
-
+    verifySpinner.stop();
     return edit;
   } catch (error) {
     console.error(
@@ -119,6 +121,7 @@ export async function verifyEdit(
       " in received JSON: ",
       fixedEditJSON
     );
+    verifySpinner.stop();
     return edit;
   }
 }

@@ -9,9 +9,10 @@ import fs from "node:fs";
 import { EditProcessor } from "./edit-processor";
 import { countTokens } from "@anthropic-ai/tokenizer";
 import { taskPrompt } from "./prompt";
-import { models } from "./models";
+import { models, preferredVerifierModel } from "./models";
 import { getAIEditsFromFireworks } from "./call-fireworks";
 import { verifyEditStream } from "./verify-edits";
+import { checkAPIKey, getAndSetAPIKey } from "./apiKeyUtils";
 
 function listAvailableModels() {
   console.log(
@@ -28,37 +29,13 @@ function listAvailableModels() {
 
 async function checkAndSetAPIKey(selectedModel: (typeof models)[number]) {
   const provider = selectedModel.provider;
-  const apiKey = await getAPIKey(provider);
+  const apiKeyPresent = checkAPIKey(provider);
 
-  if (provider === "anthropic") {
-    process.env.ANTHROPIC_API_KEY = apiKey;
-  } else if (provider === "openai") {
-    process.env.OPENAI_API_KEY = apiKey;
-  } else if (provider === "fireworks") {
-    process.env.FIREWORKS_API_KEY = apiKey;
+  if (!apiKeyPresent) {
+    await getAndSetAPIKey(provider);
   }
 
   console.log(chalk.green(`API key for ${provider} has been set.`));
-}
-
-async function getAPIKey(provider: string): Promise<string> {
-  const envVar =
-    provider === "anthropic"
-      ? "ANTHROPIC_API_KEY"
-      : provider === "openai"
-      ? "OPENAI_API_KEY"
-      : "FIREWORKS_API_KEY";
-  if (!process.env[envVar]) {
-    console.log(chalk.yellow(`\n${envVar} is not set in your environment.`));
-    const apiKey = await password({
-      message: `Please enter your ${
-        provider.charAt(0).toUpperCase() + provider.slice(1)
-      } API key:`,
-      mask: "*",
-    });
-    process.env[envVar] = apiKey;
-  }
-  return process.env[envVar]!;
 }
 
 function checkContextWindowOverflow(
@@ -198,7 +175,9 @@ async function main() {
     const editProcessor = new EditProcessor();
     const verifiedEditStream = await verifyEditStream(
       editPacketStream,
-      selectedModel.provider
+      checkAPIKey(preferredVerifierModel.provider)
+        ? preferredVerifierModel.provider
+        : selectedModel.provider
     );
     await editProcessor.processEditStream(verifiedEditStream);
   }
