@@ -8,6 +8,7 @@ import {
   Edits,
 } from "./types";
 import OpenAI from "openai";
+import fs from "node:fs";
 import { loadNumberedFile } from "./process-files";
 
 // prettier-ignore
@@ -24,8 +25,8 @@ Verify this change:
 ${JSON.stringify(edit.change, null, 2)}
 \`\`\`
 
-and make sure it's only replacing the correct lines, or adding the code to the correct place.
-Return only the updated change object following this typespec:
+and make sure it's needed and it's only replacing the correct lines, or adding the code to the correct place. Feel free to change additions to replacements or vice versa, or skip edits if they're not needed.
+Return only the fixed change object following this typespec:
 \`\`\`typescript
 ${CorrectedEditChangeTypeStr}
 \`\`\`
@@ -34,15 +35,25 @@ ${CorrectedEditChangeTypeStr}
 export async function verifyEdit(
   edit: Edits[number],
   fullCode: string,
-  provider: (typeof models)[number]["provider"]
-): Promise<Edits[number]> {
+  preferredProvider: (typeof models)[number]["provider"]
+): Promise<Edits[number] | null> {
   let fixedEditJSON: string = "";
 
-  console.log("Full code: \n", fullCode);
+  const selectedModel: (typeof models)[number] =
+    models.find(
+      (model) => model.provider === preferredProvider && model.verifyModel
+    ) || models.find((model) => model.verifyModel)!;
 
-  console.log("Verifying edit ", JSON.stringify(edit.change, null, 2));
+  // console.log("Full code: \n", fullCode);
 
-  if (provider === "anthropic") {
+  console.log(
+    "Verifying edit with ",
+    selectedModel.name
+    // ": ",
+    // JSON.stringify(edit.change, null, 2)
+  );
+
+  if (selectedModel.provider === "anthropic") {
     // prettier-ignore
     const jsonStart = `{`;
     //   const jsonStart = `{
@@ -57,9 +68,7 @@ export async function verifyEdit(
           content: `\`\`\`\n` + jsonStart,
         },
       ],
-      model: models.find(
-        (model) => model.provider === "anthropic" && model.verifyModel
-      )!.name,
+      model: selectedModel.name,
       max_tokens: 4096,
       system: `CODE:\n${fullCode}\n`,
     };
@@ -72,15 +81,11 @@ export async function verifyEdit(
       response.content[0].type === "text"
         ? jsonStart + response.content[0].text.split(`\`\`\``)[0]
         : "";
-
-    console.log("Got from anthropic: ", fixedEditJSON);
-  } else if (provider === "openai") {
+  } else if (selectedModel.provider === "openai") {
     const openai = new OpenAI();
 
     const response = await openai.chat.completions.create({
-      model: models.find(
-        (model) => model.provider === "openai" && model.verifyModel
-      )!.name,
+      model: selectedModel.name,
       messages: [
         { role: "system", content: `CODE:\n${fullCode}\n` },
         { role: "user", content: verifyPrompt(edit) },
@@ -97,9 +102,14 @@ export async function verifyEdit(
     const fixedEdit: CorrectedEditChange = JSON.parse(fixedEditJSON);
     const verifiedFix: CorrectedEditChange =
       CorrectedEditChangeSchema.parse(fixedEdit);
+
+    if (verifiedFix.type === "skip") {
+      console.log("Skipping edit");
+      return null;
+    }
     edit.change = verifiedFix;
 
-    console.log("Verified edit: ", JSON.stringify(verifiedFix, null, 2));
+    // console.log("Verified edit: ", JSON.stringify(verifiedFix, null, 2));
 
     return edit;
   } catch (error) {
@@ -120,13 +130,18 @@ export async function* verifyEditStream(
 ): AsyncGenerator<EditPackets, void, undefined> {
   for await (const editPacket of editStream) {
     if (editPacket.type === "edit") {
+      if (!fs.existsSync(editPacket.edit.filename)) {
+        yield { type: "edit", edit: editPacket.edit };
+        continue;
+      }
+
       const loadedCode = await loadNumberedFile(editPacket.edit.filename, true);
       const verifiedEdit = await verifyEdit(
         editPacket.edit,
         loadedCode,
         provider
       );
-      yield { type: "edit", edit: verifiedEdit };
+      if (verifiedEdit) yield { type: "edit", edit: verifiedEdit };
     } else {
       yield editPacket;
     }

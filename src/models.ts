@@ -16,6 +16,7 @@ export const models: {
     inputCPM: 3,
     outputLength: 8092,
     contextWindow: 200000,
+    // verifyModel: true,
   },
   {
     name: "claude-3-haiku-20240307",
@@ -25,7 +26,7 @@ export const models: {
     inputCPM: 0.25,
     outputLength: 4096,
     contextWindow: 200000,
-    verifyModel: true,
+    // verifyModel: true,
   },
   {
     name: "gpt-4o-mini",

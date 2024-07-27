@@ -34,7 +34,7 @@ export async function* getAIEditsFromClaude(
     },
   ];
 
-  console.log("Sending messages...");
+  console.log("\n\nGetting edits...");
 
   const tokens = model === "claude-3-5-sonnet-20240620" ? 8192 : 4096;
   const headers =
@@ -74,6 +74,7 @@ export async function* getAIEditsFromClaude(
   let fullJSON = jsonStart;
   let collectedEdits: Edits = [];
   let latestEdits: Edits = [];
+  let streamStatus: string = "notStarted";
 
   const parsePromise = new Promise<void>((resolve, reject) => {
     oboe(jsonStream)
@@ -87,6 +88,12 @@ export async function* getAIEditsFromClaude(
             console.warn("Invalid edit object encountered:", error.issues);
           }
         }
+      })
+      .node("!.*.filename", (filename: string) => {
+        console.log("\nTo File: ", filename);
+      })
+      .path("!.*.explain", () => {
+        streamStatus = "reasonEntered";
       })
       .done(() => {
         resolve();
@@ -112,6 +119,22 @@ export async function* getAIEditsFromClaude(
       chunk.delta?.type === "text_delta"
     ) {
       const text = chunk.delta.text;
+
+      if (streamStatus === "reasonEntered") {
+        if (text.includes(`"`)) {
+          process.stdout.write("\nChange: ");
+          streamStatus = "reasonStarted";
+        }
+        process.stdout.write(
+          text.split(`"`).length > 1 ? text.split(`"`)[1] : ""
+        );
+      } else if (streamStatus === "reasonStarted") {
+        process.stdout.write(text.split(`"`)[0]);
+        if (text.includes(`"`)) {
+          streamStatus = "reasonEnded";
+        }
+      }
+
       fullJSON += text;
       tokenStream.push(text);
     }

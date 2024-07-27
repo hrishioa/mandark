@@ -76,16 +76,25 @@ export type CorrectedEditChange =
       type: "replacement";
       fromLineNumber: number;
       toLineNumber: number;
+    }
+  | {
+      type: "skip";
     };
 
-export const CorrectedEditChangeTypeStr = `type CorrectedEditChange = {
+export const CorrectedEditChangeTypeStr = `type CorrectedEditChange =
+{
+    reason: string; // Explain why this change was made, write 'no change' if there's no need for a change
     type: "addition";
     atLine: number;
   } | {
+    reason: string;
     type: "replacement";
     fromLineNumber: number;
     toLineNumber: number;
-  }`;
+  }  | {
+    reason: string;
+    type: 'skip' // Means to skip this edit, no need to apply
+    };`;
 
 export const CorrectedEditChangeSchema = z.discriminatedUnion("type", [
   z.object({
@@ -96,5 +105,8 @@ export const CorrectedEditChangeSchema = z.discriminatedUnion("type", [
     type: z.literal("replacement"),
     fromLineNumber: z.number(),
     toLineNumber: z.number(),
+  }),
+  z.object({
+    type: z.literal("skip"),
   }),
 ]);

@@ -72,7 +72,7 @@ export async function* getAIEdits(
     },
   ];
 
-  console.log("Sending messages...");
+  console.log("Getting edits...");
 
   const stream = await anthropic.messages.create({
     messages,
