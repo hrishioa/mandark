@@ -63,7 +63,12 @@ export async function* getAIEditsFromGPT(
           latestEdits.push(validatedEdit);
         } catch (error) {
           if (error instanceof z.ZodError) {
-            console.warn("Invalid edit object encountered:", error.issues);
+            console.warn(
+              "Invalid edit object encountered:",
+              error.issues,
+              " in ",
+              JSON.stringify(edit, null, 2)
+            );
           }
         }
       })

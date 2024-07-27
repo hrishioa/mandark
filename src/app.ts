@@ -11,6 +11,7 @@ import { countTokens } from "@anthropic-ai/tokenizer";
 import { taskPrompt } from "./prompt";
 import { models } from "./models";
 import { getAIEditsFromFireworks } from "./call-fireworks";
+import { verifyEditStream } from "./verify-edits";
 
 function listAvailableModels() {
   console.log(
@@ -149,17 +150,6 @@ async function main() {
     )}`
   );
 
-  (estimatedTokens / 1000000) * selectedModel.inputCPM +
-    selectedModel.outputCPM * (selectedModel.outputLength / 10000000);
-
-  console.log(
-    `Loaded ${
-      processedFiles.count
-    } files (${estimatedTokens} tokens). Estimated max cost: $${estimatedCosts.toFixed(
-      4
-    )}`
-  );
-
   const task = await input({
     message:
       "What do you need me to do? (Type 'ask' followed by your question to ask a question instead): ",
@@ -206,7 +196,11 @@ async function main() {
     }
 
     const editProcessor = new EditProcessor();
-    await editProcessor.processEditStream(editPacketStream);
+    const verifiedEditStream = await verifyEditStream(
+      editPacketStream,
+      selectedModel.provider
+    );
+    await editProcessor.processEditStream(verifiedEditStream);
   }
 
   console.log(

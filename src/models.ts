@@ -6,6 +6,7 @@ export const models: {
   inputCPM: number;
   outputLength: number;
   contextWindow: number;
+  verifyModel?: boolean;
 }[] = [
   {
     name: "claude-3-5-sonnet-20240620",
@@ -24,6 +25,7 @@ export const models: {
     inputCPM: 0.25,
     outputLength: 4096,
     contextWindow: 200000,
+    verifyModel: true,
   },
   {
     name: "gpt-4o-mini",
@@ -33,6 +35,7 @@ export const models: {
     inputCPM: 0.15,
     outputLength: 16384,
     contextWindow: 128000,
+    verifyModel: true,
   },
   {
     name: "gpt-4-turbo",

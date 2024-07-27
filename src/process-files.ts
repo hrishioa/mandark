@@ -16,7 +16,7 @@ export async function processFiles(
     if (stat.isDirectory()) {
       const files = await fastGlob(`${input}/**/*.{ts,tsx,js,py}`, {
         absolute: true,
-        ignore: ['**/node_modules/**']
+        ignore: ["**/node_modules/**"],
       });
       allFiles.push(...files);
     } else if (stat.isFile()) {
@@ -27,7 +27,9 @@ export async function processFiles(
   }
 
   const processedContents = (
-    await Promise.all(allFiles.map((file) => processFile(file, includeImports)))
+    await Promise.all(
+      allFiles.map((file) => loadNumberedFile(file, includeImports))
+    )
   ).join("");
 
   return {
@@ -36,7 +38,7 @@ export async function processFiles(
   };
 }
 
-async function processFile(
+export async function loadNumberedFile(
   filePath: string,
   includeImports: boolean
 ): Promise<string> {

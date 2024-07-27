@@ -2,7 +2,7 @@ import * as path from "path";
 import * as fs from "fs";
 import { execSync } from "child_process";
 import { confirm } from "@inquirer/prompts";
-import { Edits } from "./types";
+import { EditPackets, Edits } from "./types";
 import chalk from "chalk";
 
 function createSeparator(text: string = ""): string {
@@ -64,7 +64,7 @@ export class EditProcessor {
   }
 
   async processEditStream(
-    editStream: AsyncGenerator<any, void, undefined>
+    editStream: AsyncGenerator<EditPackets, void, undefined>
   ): Promise<void> {
     for await (const editPacket of editStream) {
       if (editPacket.type === "edit") {
@@ -105,15 +105,15 @@ export class EditProcessor {
     let startLine: number, endLine: number;
     let newContent: string[];
 
-    switch (edit.type.type) {
+    switch (edit.change.type) {
       case "addition":
-        startLine = edit.type.atLine - 1;
+        startLine = edit.change.atLine - 1;
         endLine = startLine;
         newContent = edit.code.split("\n");
         break;
       case "replacement":
-        startLine = edit.type.fromLineNumber - 1;
-        endLine = edit.type.toLineNumber;
+        startLine = edit.change.fromLineNumber - 1;
+        endLine = edit.change.toLineNumber;
         newContent = edit.code.split("\n");
         break;
       default:
@@ -153,15 +153,15 @@ export class EditProcessor {
       let startLine: number, endLine: number;
       let newContent: string[];
 
-      switch (edit.type.type) {
+      switch (edit.change.type) {
         case "addition":
-          startLine = edit.type.atLine - 1;
+          startLine = edit.change.atLine - 1;
           endLine = startLine;
           newContent = edit.code.split("\n");
           break;
         case "replacement":
-          startLine = edit.type.fromLineNumber - 1;
-          endLine = edit.type.toLineNumber;
+          startLine = edit.change.fromLineNumber - 1;
+          endLine = edit.change.toLineNumber;
           newContent = edit.code.split("\n");
           break;
       }
@@ -189,10 +189,11 @@ export class EditProcessor {
   }
   private calculateTotalLinesChanged(edits: Edits): number {
     return edits.reduce((total, edit) => {
-      if (edit.type.type === "addition") {
+      if (edit.change.type === "addition") {
         return total + edit.code.split("\n").length;
-      } else if (edit.type.type === "replacement") {
-        const oldLines = edit.type.toLineNumber - edit.type.fromLineNumber + 1;
+      } else if (edit.change.type === "replacement") {
+        const oldLines =
+          edit.change.toLineNumber - edit.change.fromLineNumber + 1;
         const newLines = edit.code.split("\n").length;
         return total + Math.abs(newLines - oldLines);
       }
@@ -203,9 +204,13 @@ export class EditProcessor {
   private sortEdits(edits: Edits): Edits {
     return edits.sort((a, b) => {
       const aLine =
-        a.type.type === "addition" ? a.type.atLine : a.type.fromLineNumber;
+        a.change.type === "addition"
+          ? a.change.atLine
+          : a.change.fromLineNumber;
       const bLine =
-        b.type.type === "addition" ? b.type.atLine : b.type.fromLineNumber;
+        b.change.type === "addition"
+          ? b.change.atLine
+          : b.change.fromLineNumber;
       return bLine - aLine; // Sort in descending order (bottom to top)
     });
   }

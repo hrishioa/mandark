@@ -15,26 +15,25 @@ const EditTypeSchema = z.discriminatedUnion("type", [
 export const EditSchema = z.object({
   explain: z.string(),
   filename: z.string(),
-  type: EditTypeSchema,
+  change: EditTypeSchema,
   code: z.string(),
   newPackages: z.array(z.string()).optional(),
 });
 
-export type AIEditGenerator = AsyncGenerator<
+export type EditPackets =
   | { type: "edit"; edit: Edits[number] }
   | { type: "error"; error: string }
   | {
       type: "alledits";
       edits: Edits;
-    },
-  void,
-  undefined
->;
+    };
+
+export type AIEditGenerator = AsyncGenerator<EditPackets, void, undefined>;
 
 export type Edits = {
   explain: string; // explain what you want to do and why you're making this change.
   filename: string;
-  type:
+  change:
     | {
         type: "addition";
         atLine: number;
@@ -51,7 +50,7 @@ export type Edits = {
 export const EditTypeStr = `export type Edits = {
   explain: string; // explain what you want to do and why you're making this change.
   filename: string;
-  type:
+  change:
     | {
         type: "addition";
         atLine: number;
@@ -65,3 +64,37 @@ export const EditTypeStr = `export type Edits = {
   newPackages?: string[]; // Does this code need new packages to be installed?
 }[];
 `;
+
+// Edit correction
+
+export type CorrectedEditChange =
+  | {
+      type: "addition";
+      atLine: number;
+    }
+  | {
+      type: "replacement";
+      fromLineNumber: number;
+      toLineNumber: number;
+    };
+
+export const CorrectedEditChangeTypeStr = `type CorrectedEditChange = {
+    type: "addition";
+    atLine: number;
+  } | {
+    type: "replacement";
+    fromLineNumber: number;
+    toLineNumber: number;
+  }`;
+
+export const CorrectedEditChangeSchema = z.discriminatedUnion("type", [
+  z.object({
+    type: z.literal("addition"),
+    atLine: z.number(),
+  }),
+  z.object({
+    type: z.literal("replacement"),
+    fromLineNumber: z.number(),
+    toLineNumber: z.number(),
+  }),
+]);
