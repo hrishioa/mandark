@@ -5,6 +5,7 @@ export const models: {
   outputCPM: number;
   inputCPM: number;
   outputLength: number;
+  contextWindow: number;
 }[] = [
   {
     name: "claude-3-5-sonnet-20240620",
@@ -13,6 +14,7 @@ export const models: {
     outputCPM: 15,
     inputCPM: 3,
     outputLength: 8092,
+    contextWindow: 200000,
   },
   {
     name: "claude-3-haiku-20240307",
@@ -21,6 +23,7 @@ export const models: {
     outputCPM: 1.25,
     inputCPM: 0.25,
     outputLength: 4096,
+    contextWindow: 200000,
   },
   {
     name: "gpt-4o-mini",
@@ -29,6 +32,7 @@ export const models: {
     outputCPM: 0.6,
     inputCPM: 0.15,
     outputLength: 16384,
+    contextWindow: 128000,
   },
   {
     name: "gpt-4-turbo",
@@ -37,6 +41,7 @@ export const models: {
     outputCPM: 30,
     inputCPM: 10,
     outputLength: 4096,
+    contextWindow: 128000,
   },
   {
     name: "accounts/fireworks/models/llama-v3p1-405b-instruct",
@@ -45,5 +50,6 @@ export const models: {
     outputCPM: 3,
     inputCPM: 3,
     outputLength: 16384,
+    contextWindow: 262144,
   },
 ];

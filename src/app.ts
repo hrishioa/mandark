@@ -1,24 +1,25 @@
 #!/usr/bin/env node
 import { askAI } from "./askAI";
-
+import { input, confirm, password } from "@inquirer/prompts";
 import chalk from "chalk";
 import { getAIEditsFromClaude } from "./call-ai-claude";
 import { getAIEditsFromGPT } from "./call-ai-gpt";
 import { processFiles } from "./process-files";
-import { input } from "@inquirer/prompts";
 import fs from "node:fs";
 import { EditProcessor } from "./edit-processor";
 import { countTokens } from "@anthropic-ai/tokenizer";
 import { taskPrompt } from "./prompt";
 import { models } from "./models";
-import { password } from "@inquirer/prompts";
 import { getAIEditsFromFireworks } from "./call-fireworks";
 
 function listAvailableModels() {
-  console.log("Available models:");
-  models.forEach((model) => {
-    console.log(`- ${model.nickName}: ${model.name} (${model.provider})`);
-  });
+  console.log(
+    "\nAvailable models:",
+    models.map((model) => model.nickName).join(", ")
+  );
+  // models.forEach((model) => {
+  //   console.log(`- ${model.nickName}: ${model.name} (${model.provider})`);
+  // });
   console.log(
     "\nYou can append the model nickname to the end of your command to use a specific model."
   );
@@ -59,8 +60,22 @@ async function getAPIKey(provider: string): Promise<string> {
   return process.env[envVar]!;
 }
 
+function checkContextWindowOverflow(
+  inputTokens: number,
+  selectedModel: (typeof models)[number]
+): { overflow: boolean; overflowTokens?: number; overflowPercentage?: number } {
+  const availableTokens =
+    selectedModel.contextWindow - selectedModel.outputLength;
+  if (inputTokens > availableTokens) {
+    const overflowTokens = inputTokens - availableTokens;
+    const overflowPercentage = (overflowTokens / availableTokens) * 100;
+    return { overflow: true, overflowTokens, overflowPercentage };
+  }
+  return { overflow: false };
+}
+
 async function main() {
-  console.log("Welcome to Mandark!");
+  console.log("\n\nWelcome to Mandark!");
   let inputs = process.argv.slice(2);
   const printCodeAndExit = inputs.includes("-p");
   const includeImports = inputs.includes("-a");
@@ -77,7 +92,7 @@ async function main() {
   }
 
   console.log(
-    `Selected model: ${selectedModel.nickName} (${selectedModel.name} from ${selectedModel.provider})`
+    `Selected model: ${selectedModel.nickName} (${selectedModel.name} from ${selectedModel.provider})\n`
   );
 
   await checkAndSetAPIKey(selectedModel);
@@ -99,8 +114,42 @@ async function main() {
     processedFiles.code + taskPrompt("x".repeat(100))
   );
 
+  const overflowCheck = checkContextWindowOverflow(
+    estimatedTokens,
+    selectedModel
+  );
+  if (overflowCheck.overflow) {
+    console.log(
+      chalk.yellow(
+        `Warning: Input exceeds model's context window by ${
+          overflowCheck.overflowTokens
+        } tokens (${overflowCheck.overflowPercentage?.toFixed(2)}%).`
+      )
+    );
+    const continueAnyway = await confirm({
+      message:
+        "Do you want to continue anyway? (This may result in incomplete processing)",
+      default: false,
+    });
+    if (!continueAnyway) {
+      console.log("Please reduce the input size and try again.");
+      process.exit(0);
+    }
+  }
+
   const estimatedCosts =
     (estimatedTokens / 1000000) * selectedModel.inputCPM +
+    selectedModel.outputCPM * (selectedModel.outputLength / 10000000);
+
+  console.log(
+    `Loaded ${
+      processedFiles.count
+    } files (${estimatedTokens} tokens). Estimated max cost: $${estimatedCosts.toFixed(
+      4
+    )}`
+  );
+
+  (estimatedTokens / 1000000) * selectedModel.inputCPM +
     selectedModel.outputCPM * (selectedModel.outputLength / 10000000);
 
   console.log(
