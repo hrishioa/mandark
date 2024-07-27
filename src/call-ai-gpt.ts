@@ -53,6 +53,7 @@ export async function* getAIEditsFromGPT(
   let fullJSON = "";
   let collectedEdits: Edits = [];
   let latestEdits: Edits = [];
+  let streamStatus: string = "notStarted";
 
   const parsePromise = new Promise<void>((resolve, reject) => {
     oboe(jsonStream)
@@ -63,14 +64,15 @@ export async function* getAIEditsFromGPT(
           latestEdits.push(validatedEdit);
         } catch (error) {
           if (error instanceof z.ZodError) {
-            console.warn(
-              "Invalid edit object encountered:",
-              error.issues,
-              " in ",
-              JSON.stringify(edit, null, 2)
-            );
+            console.warn("Invalid edit object encountered:", error.issues);
           }
         }
+      })
+      .node("edits.*.filename", (filename: string) => {
+        console.log("\nTo File: ", filename);
+      })
+      .path("edits.*.explain", () => {
+        streamStatus = "reasonEntered";
       })
       .done(() => {
         resolve();
@@ -91,6 +93,22 @@ export async function* getAIEditsFromGPT(
 
     const text = chunk.choices[0]?.delta?.content || "";
     fullJSON += text;
+
+    if (streamStatus === "reasonEntered") {
+      if (text.includes('"')) {
+        process.stdout.write("\nChange: ");
+        streamStatus = "reasonStarted";
+      }
+      process.stdout.write(
+        text.split('"').length > 1 ? text.split('"')[1] : ""
+      );
+    } else if (streamStatus === "reasonStarted") {
+      process.stdout.write(text.split('"')[0]);
+      if (text.includes('"')) {
+        streamStatus = "reasonEnded";
+      }
+    }
+
     tokenStream.push(text);
   }
 
