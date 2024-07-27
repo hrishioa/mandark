@@ -20,9 +20,6 @@ function listAvailableModels() {
     "\nAvailable models:",
     models.map((model) => model.nickName).join(", ")
   );
-  // models.forEach((model) => {
-  //   console.log(`- ${model.nickName}: ${model.name} (${model.provider})`);
-  // });
   console.log(
     "\nYou can append the model nickname to the end of your command to use a specific model."
   );
