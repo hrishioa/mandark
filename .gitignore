@@ -6,6 +6,8 @@ packages/*/*.wasm
 profile.json
 dist
 
+mandark-history.json
+
 compiled-code.txt
 
 .env

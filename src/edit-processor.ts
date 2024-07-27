@@ -142,7 +142,7 @@ export class EditProcessor {
   }
 
   private async applyConfirmedEdits(): Promise<void> {
-    const sortedEdits = this.sortEdits(this.confirmedEdits);
+    const sortedEdits = this.sortEdits(this.confirmedEdits); // Sort edits from top to bottom
     const totalLinesChanged = this.calculateTotalLinesChanged(sortedEdits);
 
     console.log(createSeparator("Applying Confirmed Edits"));
@@ -214,7 +214,7 @@ export class EditProcessor {
         b.change.type === "addition"
           ? b.change.atLine
           : b.change.fromLineNumber;
-      return bLine - aLine; // Sort in descending order (bottom to top)
+      return aLine - bLine; // Sort in ascending order (top to bottom)
     });
   }
 
