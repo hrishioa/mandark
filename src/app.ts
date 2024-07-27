@@ -13,6 +13,7 @@ import { models, preferredVerifierModel } from "./models";
 import { getAIEditsFromFireworks } from "./call-fireworks";
 import { verifyEditStream } from "./verify-edits";
 import { checkAPIKey, getAndSetAPIKey } from "./apiKeyUtils";
+import { revertLastChanges } from "./edit-history";
 
 function listAvailableModels() {
   console.log(
@@ -55,6 +56,12 @@ function checkContextWindowOverflow(
 async function main() {
   console.log("\n\nWelcome to Mandark!");
   let inputs = process.argv.slice(2);
+
+  if (inputs[0] === "revert") {
+    revertLastChanges();
+    return;
+  }
+
   const printCodeAndExit = inputs.includes("-p");
   const includeImports = inputs.includes("-a");
   inputs = inputs.filter((input) => !input.startsWith("-") && !!input);

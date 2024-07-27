@@ -4,6 +4,7 @@ import { execSync } from "child_process";
 import { confirm } from "@inquirer/prompts";
 import { EditPackets, Edits } from "./types";
 import chalk from "chalk";
+import { saveEdits } from './edit-history';
 
 function createSeparator(text: string = ""): string {
   const separatorLength = 50;
@@ -185,6 +186,8 @@ export class EditProcessor {
     console.log(chalk.cyan(`Total lines changed: ${totalLinesChanged}`));
     this.fileManager.saveAllFiles();
     console.log(chalk.green("All changes have been saved."));
+    saveEdits(this.confirmedEdits);
+    console.log(chalk.green("Edit history has been updated."));
     console.log(createSeparator());
   }
   private calculateTotalLinesChanged(edits: Edits): number {
