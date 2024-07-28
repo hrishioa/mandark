@@ -8,9 +8,16 @@
 
 <h3 align="center">Mandark is a bog-simple (~80kb) AI intern that can do a lot, including building himself.</h3>
 
+
+
+https://github.com/user-attachments/assets/f3aff778-0839-4bb2-9fe3-c8c6b98434a5
+
+
+
 ## Features
 
 - Run without installation
+- `mandark revert` to revert changes completely
 - Type `ask` followed by your question to ask a question about any codebase
 - Supports Claude-3.5 Sonnet, Haiku, GPT-4o-mini and GPT-4-turbo (now with llama405b from Fireworks)
 - Edit and create multiple files
