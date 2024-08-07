@@ -1,6 +1,6 @@
 // prettier-ignore
 export const askPrompt = (question: string) =>
-`Use the provided code to answer this question. Answer succincty and provide code snippets if needed.
+`Use the provided code to answer this question. Answer succinctly and provide code snippets if needed.
 
 Use this format for code snippets:
 
