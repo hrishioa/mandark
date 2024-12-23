@@ -1,6 +1,6 @@
 {
   "name": "mandark",
-  "version": "0.0.15",
+  "version": "0.0.17",
   "author": "Hrishi Olickel <twitter-@hrishioa> (https://olickel.com)",
   "description": "Super simple, easily modifiable AI Coder",
   "repository": {
@@ -13,6 +13,7 @@
     "@anthropic-ai/sdk": "^0.24.3",
     "@anthropic-ai/tokenizer": "^0.0.4",
     "chalk": "4.1.2",
+    "clipboardy": "^4.0.0",
     "fast-glob": "^3.3.2",
     "inquirer": "^10.0.3",
     "oboe": "^2.1.5",

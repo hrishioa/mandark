@@ -60,6 +60,7 @@ async function main() {
 
   const printCodeAndExit = inputs.includes("-p");
   const includeImports = inputs.includes("-a");
+  const copyToClipboard = inputs.includes("-c");
   inputs = inputs.filter((input) => !input.startsWith("-") && !!input);
 
   const modelNickname = inputs.pop()!;
@@ -77,11 +78,17 @@ async function main() {
 
   const processedFiles = await processFiles(inputs, includeImports);
 
-  if (printCodeAndExit) {
-    fs.writeFileSync("compiled-code.txt", processedFiles.code);
-    console.log(
-      "Combined line-tagged code saved to compiled-code.txt. Thank you for using Mandark!"
-    );
+  if (printCodeAndExit || copyToClipboard) {
+    if (printCodeAndExit) {
+      fs.writeFileSync("compiled-code.txt", processedFiles.code);
+      console.log("Line tagged code saved to compiled-code.txt");
+    }
+    if (copyToClipboard) {
+      await import("clipboardy").then((clipboardy) =>
+        clipboardy.default.writeSync(processedFiles.code)
+      );
+      console.log("Line tagged code copied to clipboard");
+    }
     process.exit(0);
   }
 
