@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import fastGlob from "fast-glob";
+import { extractGitHubUrl, cloneOrUpdateRepo } from "./github-utils";
 
 export async function processFiles(
   inputs: string[],
@@ -12,6 +13,43 @@ export async function processFiles(
   const allFiles: string[] = [];
 
   for (const input of inputs) {
+    const githubUrl = extractGitHubUrl(input);
+
+    if (githubUrl) {
+      const repoInfo = cloneOrUpdateRepo(githubUrl);
+
+      // First, check for README
+      const readmePath = path.join(repoInfo.path, "README.md");
+      if (fs.existsSync(readmePath)) {
+        allFiles.push(readmePath);
+      }
+
+      if (repoInfo.sourceDirs.length > 0) {
+        // If we found source directories, only search in those
+        for (const sourceDir of repoInfo.sourceDirs) {
+          const files = await fastGlob(`${sourceDir}/**/*.{ts,tsx,js,py}`, {
+            absolute: true,
+            ignore: ["**/node_modules/**", "**/.git/**"],
+          });
+          allFiles.push(...files);
+        }
+      } else {
+        // Fallback to searching the entire repo if no source dirs found
+        const files = await fastGlob(`${repoInfo.path}/**/*.{ts,tsx,js,py}`, {
+          absolute: true,
+          ignore: [
+            "**/node_modules/**",
+            "**/.git/**",
+            "**/test/**",
+            "**/tests/**",
+            "**/dist/**",
+            "**/build/**",
+          ],
+        });
+        allFiles.push(...files);
+      }
+      continue;
+    }
     const stat = fs.statSync(input);
     if (stat.isDirectory()) {
       const files = await fastGlob(`${input}/**/*.{ts,tsx,js,py}`, {
