@@ -51,7 +51,6 @@ function checkContextWindowOverflow(
 }
 
 async function main() {
-  console.log("\n\nWelcome to Mandark!");
   let inputs = process.argv.slice(2);
 
   if (inputs[0] === "revert") {
@@ -63,8 +62,6 @@ async function main() {
   const includeImports = inputs.includes("-a");
   inputs = inputs.filter((input) => !input.startsWith("-") && !!input);
 
-  listAvailableModels();
-
   const modelNickname = inputs.pop()!;
   let selectedModel = models.find((model) => model.nickName === modelNickname);
 
@@ -73,14 +70,8 @@ async function main() {
     selectedModel = models[0];
   }
 
-  console.log(
-    `Selected model: ${selectedModel.nickName} (${selectedModel.name} from ${selectedModel.provider})\n`
-  );
-
-  await checkAndSetAPIKey(selectedModel);
-
   if (inputs.length === 0) {
-    console.error("No files or folders to process");
+    console.error("Problem: No files or folders to process");
     process.exit(1);
   }
 
@@ -88,9 +79,21 @@ async function main() {
 
   if (printCodeAndExit) {
     fs.writeFileSync("compiled-code.txt", processedFiles.code);
-    console.log("Code saved to compiled-code.txt");
+    console.log(
+      "Combined line-tagged code saved to compiled-code.txt. Thank you for using Mandark!"
+    );
     process.exit(0);
   }
+
+  console.log("\n\nWelcome to Mandark!");
+
+  listAvailableModels();
+
+  console.log(
+    `Selected model: ${selectedModel.nickName} (${selectedModel.name} from ${selectedModel.provider})\n`
+  );
+
+  await checkAndSetAPIKey(selectedModel);
 
   const estimatedTokens = countTokens(
     processedFiles.code + taskPrompt("x".repeat(100))
