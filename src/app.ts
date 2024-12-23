@@ -14,6 +14,7 @@ import { getAIEditsFromFireworks } from "./call-fireworks";
 import { verifyEditStream } from "./verify-edits";
 import { checkAPIKey, getAndSetAPIKey } from "./apiKeyUtils";
 import { revertLastChanges } from "./edit-history";
+import { extractGitHubUrl } from "./github-utils";
 
 function listAvailableModels() {
   console.log(
@@ -58,10 +59,84 @@ async function main() {
     return;
   }
 
-  const printCodeAndExit = inputs.includes("-p");
   const includeImports = inputs.includes("-a");
+  inputs = inputs.filter((input) => input !== "-a");
+
+  const printCodeAndExit = inputs.includes("-p");
   const copyToClipboard = inputs.includes("-c");
-  inputs = inputs.filter((input) => !input.startsWith("-") && !!input);
+  inputs = inputs.filter(
+    (input) =>
+      !input.startsWith("-") && !!input && input !== "-c" && input !== "-p"
+  );
+
+  // Handle new modes: ask, copy, pipe
+  if (inputs[0] === "ask") {
+    const githubUrls = inputs.slice(1).filter(extractGitHubUrl);
+    const question = inputs.slice(githubUrls.length + 1).join(" ");
+
+    if (githubUrls.length === 0 || !question) {
+      console.error(
+        'Usage: npx mandark ask <github-url1> <github-url2> ... "Your question here"'
+      );
+      process.exit(1);
+    }
+    let combinedCode = "";
+    for (const url of githubUrls) {
+      const processedFiles = await processFiles([url], includeImports);
+      combinedCode += processedFiles.code;
+    }
+
+    const selectedModel = models[0]; // Default model for ask
+    await checkAndSetAPIKey(selectedModel);
+
+    const answerStream = askAI(
+      combinedCode,
+      question,
+      selectedModel.name,
+      selectedModel.provider
+    );
+    for await (const chunk of answerStream) {
+      process.stdout.write(chunk);
+    }
+    console.log("\n");
+    return;
+  }
+
+  if (inputs[0] === "copy") {
+    const githubUrls = inputs.slice(1).filter(extractGitHubUrl);
+    if (githubUrls.length === 0) {
+      console.error("Usage: npx mandark copy <github-url1> <github-url2> ...");
+      process.exit(1);
+    }
+    let combinedCode = "";
+    for (const url of githubUrls) {
+      const processedFiles = await processFiles([url], includeImports);
+      combinedCode += processedFiles.code;
+    }
+    await import("clipboardy").then((clipboardy) =>
+      clipboardy.default.writeSync(combinedCode)
+    );
+    console.log("Line tagged code copied to clipboard");
+    return;
+  }
+
+  if (inputs[0] === "pipe") {
+    const githubUrls = inputs.slice(1).filter(extractGitHubUrl);
+    if (githubUrls.length === 0) {
+      console.error(
+        "Usage: npx mandark pipe <github-url1> <github-url2> ... | another-command"
+      );
+      process.exit(1);
+    }
+
+    let combinedCode = "";
+    for (const url of githubUrls) {
+      const processedFiles = await processFiles([url], includeImports);
+      combinedCode += processedFiles.code;
+    }
+    process.stdout.write(combinedCode);
+    return;
+  }
 
   const modelNickname = inputs.pop()!;
   let selectedModel = models.find((model) => model.nickName === modelNickname);
