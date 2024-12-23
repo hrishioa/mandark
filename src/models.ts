@@ -29,6 +29,16 @@ export const models: {
     verifyModel: true,
   },
   {
+    name: "o1-preview",
+    provider: "openai",
+    nickName: "o1",
+    outputCPM: 0.6,
+    inputCPM: 0.15,
+    outputLength: 16384,
+    contextWindow: 128000,
+    verifyModel: false,
+  },
+  {
     name: "gpt-4o-mini",
     provider: "openai",
     nickName: "4omini",

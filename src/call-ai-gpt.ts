@@ -13,9 +13,11 @@ export async function* getAIEditsFromGPT(
 ): AIEditGenerator {
   const openai = new OpenAI();
 
+  console.log("Model is O1? ", model.includes("o1"));
+
   let messages: ChatCompletionMessageParam[] = [
     {
-      role: "system",
+      role: model.includes("o1") ? "system" : "user",
       content: `CODE:\n${fileContent}\n`,
     },
     {
