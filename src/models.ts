@@ -9,7 +9,7 @@ export const models: {
   verifyModel?: boolean;
 }[] = [
   {
-    name: "claude-3-5-sonnet-20240620",
+    name: "claude-3-5-sonnet-latest",
     provider: "anthropic",
     nickName: "sonnet35",
     outputCPM: 15,
