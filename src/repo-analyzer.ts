@@ -46,7 +46,11 @@ export function analyzeRepoStructure(repoPath: string): string[] {
           (file) =>
             file.endsWith(".ts") ||
             file.endsWith(".js") ||
-            file.endsWith(".tsx")
+            file.endsWith(".tsx") ||
+            file.endsWith(".jsx") ||
+            file.endsWith(".mjs") ||
+            file.endsWith(".cjs") ||
+            file.endsWith(".rs")
         );
 
       if (hasSourceFiles) {

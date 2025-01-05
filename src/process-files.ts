@@ -27,7 +27,7 @@ export async function processFiles(
       if (repoInfo.sourceDirs.length > 0) {
         // If we found source directories, only search in those
         for (const sourceDir of repoInfo.sourceDirs) {
-          const files = await fastGlob(`${sourceDir}/**/*.{ts,tsx,js,py}`, {
+          const files = await fastGlob(`${sourceDir}/**/*.{ts,tsx,js,py,rs}`, {
             absolute: true,
             ignore: ["**/node_modules/**", "**/.git/**"],
           });
@@ -35,7 +35,7 @@ export async function processFiles(
         }
       } else {
         // Fallback to searching the entire repo if no source dirs found
-        const files = await fastGlob(`${repoInfo.path}/**/*.{ts,tsx,js,py}`, {
+        const files = await fastGlob(`${repoInfo.path}/**/*.{ts,tsx,js,py,rs}`, {
           absolute: true,
           ignore: [
             "**/node_modules/**",
@@ -52,7 +52,7 @@ export async function processFiles(
     }
     const stat = fs.statSync(input);
     if (stat.isDirectory()) {
-      const files = await fastGlob(`${input}/**/*.{ts,tsx,js,py}`, {
+      const files = await fastGlob(`${input}/**/*.{ts,tsx,js,py,rs}`, {
         absolute: true,
         ignore: ["**/node_modules/**"],
       });
