@@ -5,7 +5,8 @@ import { extractGitHubUrl, cloneOrUpdateRepo } from "./github-utils";
 
 export async function processFiles(
   inputs: string[],
-  includeImports: boolean
+  includeImports: boolean,
+  noLineNumbers: boolean = false
 ): Promise<{
   code: string;
   count: number;
@@ -35,17 +36,20 @@ export async function processFiles(
         }
       } else {
         // Fallback to searching the entire repo if no source dirs found
-        const files = await fastGlob(`${repoInfo.path}/**/*.{ts,tsx,js,py,rs}`, {
-          absolute: true,
-          ignore: [
-            "**/node_modules/**",
-            "**/.git/**",
-            "**/test/**",
-            "**/tests/**",
-            "**/dist/**",
-            "**/build/**",
-          ],
-        });
+        const files = await fastGlob(
+          `${repoInfo.path}/**/*.{ts,tsx,js,py,rs}`,
+          {
+            absolute: true,
+            ignore: [
+              "**/node_modules/**",
+              "**/.git/**",
+              "**/test/**",
+              "**/tests/**",
+              "**/dist/**",
+              "**/build/**",
+            ],
+          }
+        );
         allFiles.push(...files);
       }
       continue;
@@ -64,32 +68,40 @@ export async function processFiles(
     }
   }
 
-  const processedContents = (
-    await Promise.all(
-      allFiles.map((file) => loadNumberedFile(file, includeImports))
-    )
-  ).join("");
+  let combinedCode = "";
+  for (const file of allFiles) {
+    combinedCode += await loadNumberedFile(file, includeImports, noLineNumbers);
+  }
 
   return {
-    code: processedContents,
+    code: combinedCode,
     count: allFiles.length,
   };
 }
 
 export async function loadNumberedFile(
   filePath: string,
-  includeImports: boolean
+  includeImports: boolean,
+  noLineNumbers: boolean = false
 ): Promise<string> {
   const content = fs.readFileSync(filePath, "utf-8");
-  let processedContent = content
-    .split("\n")
-    .map((line, index) => `L${index + 1}: ${line}`)
-    .join("\n");
+  let processedContent = noLineNumbers
+    ? content
+    : content
+        .split("\n")
+        .map((line, index) => `L${index + 1}: ${line}`)
+        .join("\n");
 
   if (!includeImports) {
-    processedContent = processedContent
-      .replace(/L\d+:\s*import.*?;?\n/g, "")
-      .replace(/L\d+:\s*import.*?{[\s\S]*?}\n/g, "");
+    if (noLineNumbers) {
+      processedContent = processedContent
+        .replace(/import.*?;?\n/g, "")
+        .replace(/import.*?{[\s\S]*?}\n/g, "");
+    } else {
+      processedContent = processedContent
+        .replace(/L\d+:\s*import.*?;?\n/g, "")
+        .replace(/L\d+:\s*import.*?{[\s\S]*?}\n/g, "");
+    }
   }
 
   // Get relative path to file

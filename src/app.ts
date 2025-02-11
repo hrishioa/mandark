@@ -51,8 +51,46 @@ function checkContextWindowOverflow(
   return { overflow: false };
 }
 
+function displayHelp() {
+  console.log(
+    chalk.bold("\nMandark - AI-powered code editing and analysis tool\n")
+  );
+  console.log("Usage:");
+  console.log("  mandark [options] <files...>         Process and edit files");
+  console.log(
+    "  mandark ask <github-urls...> <question>  Ask questions about GitHub code"
+  );
+  console.log("  mandark revert                       Revert last changes\n");
+
+  console.log("Options:");
+  console.log("  -a                Include imports in code analysis");
+  console.log("  -p                Print processed code and exit");
+  console.log("  -c                Copy results to clipboard");
+  console.log("  --no-line-numbers Disable line number tagging in code");
+  console.log("  --help, -h        Show this help message\n");
+
+  console.log("Examples:");
+  console.log("  mandark file1.ts file2.ts           Process local files");
+  console.log(
+    "  mandark -a file1.ts                 Process file with imports"
+  );
+  console.log('  mandark ask <github-url> "How does this code work?"\n');
+
+  listAvailableModels();
+}
+
 async function main() {
   let inputs = process.argv.slice(2);
+
+  // Show help if no arguments or help flag is present
+  if (
+    inputs.length === 0 ||
+    inputs.includes("--help") ||
+    inputs.includes("-h")
+  ) {
+    displayHelp();
+    return;
+  }
 
   if (inputs[0] === "revert") {
     revertLastChanges();
@@ -64,9 +102,14 @@ async function main() {
 
   const printCodeAndExit = inputs.includes("-p");
   const copyToClipboard = inputs.includes("-c");
+  const noLineNumbers = inputs.includes("--no-line-numbers");
   inputs = inputs.filter(
     (input) =>
-      !input.startsWith("-") && !!input && input !== "-c" && input !== "-p"
+      !input.startsWith("-") &&
+      !!input &&
+      input !== "-c" &&
+      input !== "-p" &&
+      input !== "--no-line-numbers"
   );
 
   // Handle new modes: ask, copy, pipe
@@ -82,7 +125,11 @@ async function main() {
     }
     let combinedCode = "";
     for (const url of githubUrls) {
-      const processedFiles = await processFiles([url], includeImports);
+      const processedFiles = await processFiles(
+        [url],
+        includeImports,
+        noLineNumbers
+      );
       combinedCode += processedFiles.code;
     }
 
@@ -151,7 +198,11 @@ async function main() {
     process.exit(1);
   }
 
-  const processedFiles = await processFiles(inputs, includeImports);
+  const processedFiles = await processFiles(
+    inputs,
+    includeImports,
+    noLineNumbers
+  );
 
   if (printCodeAndExit || copyToClipboard) {
     if (printCodeAndExit) {
