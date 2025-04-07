@@ -3,10 +3,15 @@ import path from "node:path";
 import fastGlob from "fast-glob";
 import { extractGitHubUrl, cloneOrUpdateRepo } from "./github-utils";
 
+// Default glob pattern for code files
+const DEFAULT_FILE_PATTERN =
+  "**/*.{ts,tsx,js,jsx,mjs,cjs,py,rs,go,c,cpp,h,hpp,java,rb,php,cs,swift,kt,scala,sh,md,json,yaml,yml,html,css,scss,less,txt}";
+
 export async function processFiles(
   inputs: string[],
   includeImports: boolean,
-  noLineNumbers: boolean = false
+  noLineNumbers: boolean = false,
+  filePattern: string = DEFAULT_FILE_PATTERN
 ): Promise<{
   code: string;
   count: number;
@@ -28,7 +33,7 @@ export async function processFiles(
       if (repoInfo.sourceDirs.length > 0) {
         // If we found source directories, only search in those
         for (const sourceDir of repoInfo.sourceDirs) {
-          const files = await fastGlob(`${sourceDir}/**/*.{ts,tsx,js,py,rs}`, {
+          const files = await fastGlob(`${sourceDir}/${filePattern}`, {
             absolute: true,
             ignore: ["**/node_modules/**", "**/.git/**"],
           });
@@ -36,27 +41,24 @@ export async function processFiles(
         }
       } else {
         // Fallback to searching the entire repo if no source dirs found
-        const files = await fastGlob(
-          `${repoInfo.path}/**/*.{ts,tsx,js,py,rs}`,
-          {
-            absolute: true,
-            ignore: [
-              "**/node_modules/**",
-              "**/.git/**",
-              "**/test/**",
-              "**/tests/**",
-              "**/dist/**",
-              "**/build/**",
-            ],
-          }
-        );
+        const files = await fastGlob(`${repoInfo.path}/${filePattern}`, {
+          absolute: true,
+          ignore: [
+            "**/node_modules/**",
+            "**/.git/**",
+            "**/test/**",
+            "**/tests/**",
+            "**/dist/**",
+            "**/build/**",
+          ],
+        });
         allFiles.push(...files);
       }
       continue;
     }
     const stat = fs.statSync(input);
     if (stat.isDirectory()) {
-      const files = await fastGlob(`${input}/**/*.{ts,tsx,js,py,rs}`, {
+      const files = await fastGlob(`${input}/${filePattern}`, {
         absolute: true,
         ignore: ["**/node_modules/**"],
       });

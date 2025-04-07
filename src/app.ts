@@ -52,30 +52,26 @@ function checkContextWindowOverflow(
 }
 
 function displayHelp() {
-  console.log(
-    chalk.bold("\nMandark - AI-powered code editing and analysis tool\n")
-  );
-  console.log("Usage:");
-  console.log("  mandark [options] <files...>         Process and edit files");
-  console.log(
-    "  mandark ask <github-urls...> <question>  Ask questions about GitHub code"
-  );
-  console.log("  mandark revert                       Revert last changes\n");
+  const helpText = `
+Mandark - Super simple, easily modifiable AI Coder
 
-  console.log("Options:");
-  console.log("  -a                Include imports in code analysis");
-  console.log("  -p                Print processed code and exit");
-  console.log("  -c                Copy results to clipboard");
-  console.log("  --no-line-numbers Disable line number tagging in code");
-  console.log("  --help, -h        Show this help message\n");
+Usage:
+  npx mandark [options] <file(s)/dir(s)/github-url(s)> [model-nickname]
+  npx mandark ask <github-url1> <github-url2> ... "Your question here"
+  npx mandark pipe <github-url1> <github-url2> ... | another-command
+  npx mandark copy <github-url1> <github-url2> ...
 
-  console.log("Examples:");
-  console.log("  mandark file1.ts file2.ts           Process local files");
-  console.log(
-    "  mandark -a file1.ts                 Process file with imports"
-  );
-  console.log('  mandark ask <github-url> "How does this code work?"\n');
+Options:
+  --include-imports, -a    Include import statements in the code
+  --print, -p              Save processed code to compiled-code.txt and exit
+  --copy, -c               Copy processed code to clipboard and exit
+  --no-line-numbers, -n    Don't add line numbers to the code
+  --pattern=<glob>         Specify the glob pattern for file types (default: **/*.{ts,tsx,js,jsx,mjs,cjs,py,rs,go,c,cpp,h,hpp,java,rb,php,cs,swift,kt,scala,sh,md,json,yaml,yml,html,css,scss,less,txt})
+  --help, -h               Show this help message
 
+Models:
+`;
+  console.log(helpText);
   listAvailableModels();
 }
 
@@ -97,20 +93,40 @@ async function main() {
     return;
   }
 
-  const includeImports = inputs.includes("-a");
-  inputs = inputs.filter((input) => input !== "-a");
+  let includeImports = false;
+  let printCodeAndExit = false;
+  let copyToClipboard = false;
+  let noLineNumbers = false;
+  let filePattern: string | undefined = undefined;
 
-  const printCodeAndExit = inputs.includes("-p");
-  const copyToClipboard = inputs.includes("-c");
-  const noLineNumbers = inputs.includes("--no-line-numbers");
-  inputs = inputs.filter(
-    (input) =>
-      !input.startsWith("-") &&
-      !!input &&
-      input !== "-c" &&
-      input !== "-p" &&
-      input !== "--no-line-numbers"
-  );
+  // Parse special arguments
+  inputs = inputs.filter((input) => {
+    if (input === "--include-imports" || input === "-a") {
+      includeImports = true;
+      return false;
+    }
+    if (input === "--print" || input === "-p") {
+      printCodeAndExit = true;
+      return false;
+    }
+    if (input === "--copy" || input === "-c") {
+      copyToClipboard = true;
+      return false;
+    }
+    if (input === "--no-line-numbers" || input === "-n") {
+      noLineNumbers = true;
+      return false;
+    }
+    if (input.startsWith("--pattern=")) {
+      filePattern = input.slice("--pattern=".length);
+      return false;
+    }
+    if (input === "--help" || input === "-h") {
+      displayHelp();
+      process.exit(0);
+    }
+    return true;
+  });
 
   // Handle new modes: ask, copy, pipe
   if (inputs[0] === "ask") {
@@ -128,7 +144,8 @@ async function main() {
       const processedFiles = await processFiles(
         [url],
         includeImports,
-        noLineNumbers
+        noLineNumbers,
+        filePattern
       );
       combinedCode += processedFiles.code;
     }
@@ -157,7 +174,12 @@ async function main() {
     }
     let combinedCode = "";
     for (const url of githubUrls) {
-      const processedFiles = await processFiles([url], includeImports);
+      const processedFiles = await processFiles(
+        [url],
+        includeImports,
+        noLineNumbers,
+        filePattern
+      );
       combinedCode += processedFiles.code;
     }
     await import("clipboardy").then((clipboardy) =>
@@ -178,7 +200,12 @@ async function main() {
 
     let combinedCode = "";
     for (const url of githubUrls) {
-      const processedFiles = await processFiles([url], includeImports);
+      const processedFiles = await processFiles(
+        [url],
+        includeImports,
+        noLineNumbers,
+        filePattern
+      );
       combinedCode += processedFiles.code;
     }
     process.stdout.write(combinedCode);
@@ -201,7 +228,8 @@ async function main() {
   const processedFiles = await processFiles(
     inputs,
     includeImports,
-    noLineNumbers
+    noLineNumbers,
+    filePattern
   );
 
   if (printCodeAndExit || copyToClipboard) {
